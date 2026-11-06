@@ -1,0 +1,19 @@
+name: Daily market data
+on:
+  schedule:
+    - cron: "15 13 * * 1-5" # 15:15 Lusaka (UTC+2), after the LuSE close
+  workflow_dispatch:
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx prisma migrate deploy
+      - run: npm run ingest -- luse boz crypto

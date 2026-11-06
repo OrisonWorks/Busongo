@@ -1,0 +1,394 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  FREE
+  ADVANCED
+  PRO
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AssetClass {
+  EQUITY
+  CRYPTO
+}
+
+model Security {
+  id           String      @id @default(cuid())
+  symbol       String      @unique
+  name         String
+  isin         String?
+  sector       String?
+  board        String?
+  currency     String      @default("ZMW")
+  assetClass   AssetClass  @default(EQUITY)
+  sharesOutstanding Float?
+  listedYear   Int?
+  description  String?
+  website      String?
+  active       Boolean     @default(true)
+  bars         PriceBar[]
+  fundamentals Fundamental[]
+  actions      CorporateAction[]
+  announcements Announcement[]
+  alerts       Alert[]
+  journal      JournalEntry[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model PriceBar {
+  id         String   @id @default(cuid())
+  securityId String
+  security   Security @relation(fields: [securityId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+  open       Float?
+  high       Float?
+  low        Float?
+  close      Float
+  change     Float?
+  trades     Int?
+  volume     Float?
+  value      Float?
+  bidPrice   Float?
+  bidQty     Float?
+  askPrice   Float?
+  askQty     Float?
+  source     String   @default("luse")
+
+  @@unique([securityId, date])
+  @@index([date])
+}
+
+model IndexBar {
+  id          String   @id @default(cuid())
+  index       String
+  date        DateTime @db.Date
+  value       Float
+  change      Float?
+  pctChange   Float?
+  trades      Int?
+  volume      Float?
+  valueTraded Float?
+  marketCap   Float?
+  marketCapExShoprite Float?
+  source      String   @default("luse")
+
+  @@unique([index, date])
+}
+
+model MarketSummary {
+  id    String   @id @default(cuid())
+  date  DateTime @unique @db.Date
+  text  String
+}
+
+model Fundamental {
+  id                String   @id @default(cuid())
+  securityId        String
+  security          Security @relation(fields: [securityId], references: [id], onDelete: Cascade)
+  fiscalYear        Int
+  period            String   @default("FY")
+  periodEnd         DateTime? @db.Date
+  currency          String   @default("ZMW")
+  revenue           Float?
+  grossProfit       Float?
+  operatingProfit   Float?
+  netIncome         Float?
+  totalAssets       Float?
+  totalLiabilities  Float?
+  totalEquity       Float?
+  totalDebt         Float?
+  cash              Float?
+  operatingCashFlow Float?
+  capex             Float?
+  eps               Float?
+  dps               Float?
+  sharesOutstanding Float?
+  source            String   @default("manual")
+  sourceUrl         String?
+
+  @@unique([securityId, fiscalYear, period])
+}
+
+model CorporateAction {
+  id         String    @id @default(cuid())
+  securityId String
+  security   Security  @relation(fields: [securityId], references: [id], onDelete: Cascade)
+  type       String
+  announced  DateTime? @db.Date
+  exDate     DateTime? @db.Date
+  payDate    DateTime? @db.Date
+  amount     Float?
+  notes      String?
+  source     String    @default("manual")
+}
+
+model Announcement {
+  id         String    @id @default(cuid())
+  securityId String?
+  security   Security? @relation(fields: [securityId], references: [id], onDelete: SetNull)
+  title      String
+  category   String?
+  date       DateTime  @db.Date
+  url        String?
+
+  @@unique([title, date])
+}
+
+model TbillAuction {
+  id           String   @id @default(cuid())
+  auctionDate  DateTime @db.Date
+  tenderNo     String
+  tenorDays    Int
+  isin         String?
+  discountRate Float?
+  yield        Float
+
+  @@unique([auctionDate, tenorDays])
+}
+
+model BondAuction {
+  id          String   @id @default(cuid())
+  auctionDate DateTime @db.Date
+  tenderNo    String
+  tenorYears  Int
+  isin        String?
+  coupon      Float?
+  yield       Float
+
+  @@unique([auctionDate, tenorYears])
+}
+
+model ListedBond {
+  id           String    @id @default(cuid())
+  name         String
+  isin         String    @unique
+  kind         String    @default("corporate")
+  value        String?
+  interest     String?
+  tenorYears   Float?
+  issueDate    DateTime? @db.Date
+  maturityDate DateTime? @db.Date
+  status       String?
+}
+
+model MacroRate {
+  id     String   @id @default(cuid())
+  key    String
+  date   DateTime
+  value  Float
+  note   String?
+
+  @@unique([key, date])
+}
+
+model TradingHoliday {
+  id   String   @id @default(cuid())
+  date DateTime @unique @db.Date
+  name String
+}
+
+model IngestRun {
+  id        String   @id @default(cuid())
+  source    String
+  status    String
+  message   String?
+  rows      Int      @default(0)
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  phone         String?
+  passwordHash  String
+  role          Role      @default(USER)
+  plan          Plan      @default(FREE)
+  planExpiresAt DateTime?
+  emailVerified DateTime?
+  resetToken    String?   @unique
+  resetExpires  DateTime?
+  createdAt     DateTime  @default(now())
+  strategies    Strategy[]
+  backtests     BacktestRun[]
+  scans         SavedScan[]
+  alerts        Alert[]
+  notifications Notification[]
+  payments      Payment[]
+  usage         UsageCounter[]
+  journal       JournalEntry[]
+  watchlist     WatchItem[]
+  paperTrades   PaperTrade[]
+  chats         ChatMessage[]
+}
+
+model Strategy {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  kind      String   @default("basic")
+  config    Json
+  isPublic  Boolean  @default(false)
+  shareId   String   @unique @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  runs      BacktestRun[]
+}
+
+model BacktestRun {
+  id         String    @id @default(cuid())
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  strategyId String?
+  strategy   Strategy? @relation(fields: [strategyId], references: [id], onDelete: SetNull)
+  kind       String
+  config     Json
+  summary    Json
+  shareId    String    @unique @default(cuid())
+  createdAt  DateTime  @default(now())
+}
+
+model SavedScan {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  config    Json
+  shareId   String   @unique @default(cuid())
+  createdAt DateTime @default(now())
+}
+
+model Alert {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  securityId  String
+  security    Security  @relation(fields: [securityId], references: [id], onDelete: Cascade)
+  metric      String
+  operator    String
+  threshold   Float
+  active      Boolean   @default(true)
+  triggeredAt DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan        Plan
+  months      Int      @default(1)
+  amount      Float
+  currency    String   @default("ZMW")
+  provider    String
+  network     String?
+  phone       String?
+  reference   String   @unique
+  externalRef String?
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model UsageCounter {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  period String
+  kind   String
+  count  Int    @default(0)
+
+  @@unique([userId, period, kind])
+}
+
+model JournalEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  securityId String
+  security   Security @relation(fields: [securityId], references: [id], onDelete: Cascade)
+  side       String
+  quantity   Float
+  price      Float
+  fees       Float    @default(0)
+  date       DateTime @db.Date
+  tag        String?
+  notes      String?
+  backtestId String?
+  createdAt  DateTime @default(now())
+}
+
+model WatchItem {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol   String
+
+  @@unique([userId, symbol])
+}
+
+model PaperTrade {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol    String
+  side      String
+  quantity  Float
+  price     Float
+  fees      Float
+  createdAt DateTime @default(now())
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  firstName String?
+  lastName  String?
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model BlogPost {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String
+  content     String
+  category    String
+  author      String   @default("Research Desk")
+  published   Boolean  @default(true)
+  publishedAt DateTime @default(now())
+}
