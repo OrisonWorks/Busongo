@@ -6,7 +6,7 @@ import ResultView from "./ResultView";
 
 export default function BasicBacktester({ symbols, initial, signedIn }: { symbols: { symbol: string; name: string; group: string }[]; initial?: string; signedIn: boolean }) {
   const [symbol, setSymbol] = useState(initial || symbols[0]?.symbol);
-  const [tid, setTid] = useState(TEMPLATES[0].id);
+  const [tid, setTid] = useState("macd");
   const t = TEMPLATES.find((x) => x.id === tid)!;
   const [params, setParams] = useState<Record<string, number>>({});
   const [capital, setCapital] = useState(100000);

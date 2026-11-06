@@ -41,7 +41,7 @@ export async function runBacktestAction(kind: "basic" | "advanced", raw: unknown
     const sec = await getSecurity(s);
     if (!sec) return { error: `Unknown symbol ${s}` };
     crypto ||= sec.assetClass === "CRYPTO";
-    data.set(sec.symbol, await getBars(sec.symbol, start));
+    data.set(sec.symbol, await getBars(sec.symbol));
   }
   let usage;
   if (kind === "advanced" && user) {
@@ -50,15 +50,18 @@ export async function runBacktestAction(kind: "basic" | "advanced", raw: unknown
     usage = { used: u.used, limit: u.limit };
   }
   const latestTbill = await prisma.tbillAuction.findFirst({ where: { tenorDays: 364 }, orderBy: { auctionDate: "desc" } });
-  const cfg: BacktestConfig = { ...p.data, feeRate: p.data.feeRate ?? (crypto ? CRYPTO_FEE_RATE : LUSE_FEE_RATE), benchmarkYield: latestTbill?.yield ?? null } as BacktestConfig;
+  const minFrom = start?.toISOString().slice(0, 10);
+  const from = minFrom && (!p.data.from || p.data.from < minFrom) ? minFrom : p.data.from;
+  const cfg: BacktestConfig = { ...p.data, from, feeRate: p.data.feeRate ?? (crypto ? CRYPTO_FEE_RATE : LUSE_FEE_RATE), benchmarkYield: latestTbill?.yield ?? null } as BacktestConfig;
   const result = runBacktest(cfg, data);
-  if (start) result.warnings.push(`Your ${PLANS[plan].label} plan includes ${PLANS[plan].historyLabel.toLowerCase()}. Upgrade for longer history.`);
+  if (start) result.warnings.push(`Trades are simulated from ${from}. Your ${PLANS[plan].label} plan includes ${PLANS[plan].historyLabel.toLowerCase()}. Upgrade for longer history.`);
   let runId: string | undefined;
   if (user) {
     const run = await prisma.backtestRun.create({ data: { userId: user.id, kind, config: cfg as unknown as Prisma.InputJsonValue, summary: { metrics: result.metrics, trades: result.trades.length } as Prisma.InputJsonValue } });
     runId = run.shareId;
   }
-  return { result, bars: Object.fromEntries(data), runId, usage };
+  const inRange = (d: string) => (!from || d >= from) && (!cfg.to || d <= cfg.to);
+  return { result, bars: Object.fromEntries([...data].map(([k, b]) => [k, b.filter((x) => inRange(x.date))])), runId, usage };
 }
 
 export async function saveStrategy(name: string, kind: string, config: unknown) {
