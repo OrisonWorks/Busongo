@@ -41,3 +41,11 @@ Brand, fees and plans live in `src/config/` (`brand.ts`, `fees.ts`, `plans.ts`).
 
 ## Payments
 `src/lib/pay` has a sandbox provider (default) and a generic HTTP Mobile Money aggregator (MTN / Airtel / Zamtel) enabled by `PAYMENT_CHARGE_URL` + `PAYMENT_API_KEY`. Webhooks: `POST /api/payments/<provider>` signed with HMAC-SHA256 (`PAYMENT_WEBHOOK_SECRET`). The aggregator request/response shape must be adapted to the chosen provider.
+
+## Web3 (NEAR)
+
+- **Wallet sign-in** (`/api/auth/near/start`): MyNearWallet signs a NEP-413 message bound to a one-time nonce, the `NEAR_SIGNIN_RECIPIENT` and the callback URL. The server checks the signature and that the key is a full-access key of the account, then links the wallet to the signed-in user (Profile) or creates a wallet-only account.
+- **Stablecoin payments**: USDC/USDT invoices priced at the latest BoZ USD/ZMW rate. The user sends `ft_transfer` to `NEAR_MERCHANT_ACCOUNT` with the invoice reference as memo and pastes the transaction hash; the server verifies contract, recipient, memo and amount over RPC before upgrading the plan. Busongo never holds keys or funds.
+- **Proofs** (`/verify/<sha256>`): saved strategies, backtest runs and the daily LASI / T-bill / USD-ZMW snapshot (`npm run ingest -- proofs`) are hashed from canonical JSON and, when `NEAR_ACCOUNT_ID`/`NEAR_PRIVATE_KEY` are set, written to NEAR Social under `<account>/busongo/proofs/<hash>`.
+
+Check SEC Zambia and BoZ rules on virtual assets before enabling stablecoin payments on mainnet.
