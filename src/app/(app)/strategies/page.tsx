@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { Card, Empty, PageHeader } from "@/components/ui";
 import { fmtDate, pct } from "@/lib/format";
 import { proveBacktest, proveStrategy } from "../proofs/actions";
+import { anchoringEnabled } from "@/lib/web3/near";
 
 export const metadata = { title: "My Strategies" };
 export default async function Page() {
@@ -12,8 +13,13 @@ export default async function Page() {
     prisma.strategy.findMany({ where: { userId: u.id }, orderBy: { updatedAt: "desc" } }),
     prisma.backtestRun.findMany({ where: { userId: u.id }, orderBy: { createdAt: "desc" }, take: 30 }),
   ]);
-  const proofs = new Map((await prisma.proof.findMany({ where: { userId: u.id }, orderBy: { createdAt: "asc" }, select: { refId: true, hash: true } })).map((p) => [p.refId, p.hash]));
-  const Prove = ({ id, act }: { id: string; act: (id: string) => Promise<void> }) => proofs.get(id) ? <Link className="ml-3 text-up" href={`/verify/${proofs.get(id)}`}>Verified ✓</Link> : <form action={act.bind(null, id)} className="ml-3 inline"><button className="text-brand" title="Record a SHA-256 fingerprint on NEAR so this can never be edited silently">Prove</button></form>;
+  const proofs = new Map((await prisma.proof.findMany({ where: { userId: u.id }, orderBy: { createdAt: "asc" }, select: { refId: true, hash: true, txHash: true } })).map((p) => [p.refId, p]));
+  const onChain = anchoringEnabled();
+  const Prove = ({ id, act }: { id: string; act: (id: string) => Promise<void> }) => {
+    const p = proofs.get(id);
+    if (p && (p.txHash || !onChain)) return <Link className="ml-3 text-up" href={`/verify/${p.hash}`}>{p.txHash ? "Verified ✓" : "Fingerprinted ✓"}</Link>;
+    return <form action={act.bind(null, id)} className="ml-3 inline"><button className="text-brand" title="Record a SHA-256 fingerprint on NEAR so this can never be edited silently">{p ? "Retry on NEAR" : "Prove"}</button></form>;
+  };
   return (
     <div>
       <PageHeader title="My Strategies" subtitle="Saved strategies and your recent backtest runs. Prove one to fix its fingerprint on the NEAR blockchain, so it can be shared as a tamper-evident track record." />
