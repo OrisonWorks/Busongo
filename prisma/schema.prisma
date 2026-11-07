@@ -225,6 +225,7 @@ model User {
   name          String?
   phone         String?
   passwordHash  String
+  nearAccountId String?   @unique
   role          Role      @default(USER)
   plan          Plan      @default(FREE)
   planExpiresAt DateTime?
@@ -242,6 +243,7 @@ model User {
   journal       JournalEntry[]
   watchlist     WatchItem[]
   paperTrades   PaperTrade[]
+  proofs        Proof[]
   chats         ChatMessage[]
 }
 
@@ -417,4 +419,20 @@ model StableYield {
 
   @@unique([date, pool])
   @@index([date])
+}
+
+model Proof {
+  id         String    @id @default(cuid())
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  kind       String
+  refId      String?
+  hash       String    @unique
+  payload    Json
+  network    String?
+  txHash     String?
+  anchoredAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([kind, refId])
 }

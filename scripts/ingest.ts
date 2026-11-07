@@ -6,9 +6,10 @@ import { evaluateAlerts } from "../src/lib/alerts";
 import { generateBrief } from "../src/lib/brief";
 import { ingestP2P } from "../src/lib/ingest/p2p";
 import { ingestStableYields } from "../src/lib/ingest/defi";
+import { anchorMarketData } from "../src/lib/web3/proofs";
 import { summarizeAnnouncements } from "../src/lib/ai/sens";
 
-const jobs: Record<string, () => Promise<unknown>> = { luse: ingestLuse, boz: ingestBoz, crypto: () => ingestCrypto(), p2p: ingestP2P, defi: () => ingestStableYields(), brief: generateBrief, "sens-ai": () => summarizeAnnouncements(15) };
+const jobs: Record<string, () => Promise<unknown>> = { luse: ingestLuse, boz: ingestBoz, crypto: () => ingestCrypto(), p2p: ingestP2P, defi: () => ingestStableYields(), brief: generateBrief, "sens-ai": () => summarizeAnnouncements(15), proofs: anchorMarketData };
 
 async function run(name: string) {
   const r = await prisma.ingestRun.create({ data: { source: name, status: "running" } });

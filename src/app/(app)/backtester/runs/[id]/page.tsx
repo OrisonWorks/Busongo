@@ -10,10 +10,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const r = await prisma.backtestRun.findUnique({ where: { shareId: (await params).id } });
   if (!r) notFound();
   const c = r.config as { symbols: string[]; entry: Cond[]; exit: Cond[]; entryJoin?: string; exitJoin?: string; capital: number; feeRate: number };
+  const proof = await prisma.proof.findFirst({ where: { kind: "backtest", refId: r.id }, select: { hash: true, txHash: true } });
   const m = (r.summary as { metrics: Record<string, number | null> }).metrics;
   return (
     <div>
       <PageHeader title={`Backtest · ${c.symbols.join(", ")}`} subtitle={`${r.kind} backtest run on ${fmtDate(r.createdAt)}`}>
+        {proof && <Link href={`/verify/${proof.hash}`} className="btn btn-ghost">{proof.txHash ? "Verified on NEAR ✓" : "Fingerprinted ✓"}</Link>}
         <Link href="/backtester/advanced" className="btn btn-primary">Build your own</Link>
       </PageHeader>
       <div className="grid gap-4 md:grid-cols-2">
