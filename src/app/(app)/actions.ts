@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { paperBook } from "@/lib/paper";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
@@ -72,12 +73,16 @@ export async function paperTrade(_: FormState, fd: FormData): Promise<FormState>
   const price = sec?.bars[0]?.close;
   if (!sec || !price) return { error: "No price available for that symbol" };
   const { LUSE_FEE_RATE, CRYPTO_FEE_RATE } = await import("@/config/fees");
+  if (sec.assetClass !== "CRYPTO" && !Number.isInteger(quantity)) return { error: "LuSE shares trade in whole units" };
+  const fees = quantity * price * (sec.assetClass === "CRYPTO" ? CRYPTO_FEE_RATE : LUSE_FEE_RATE);
+  const { cash, pos } = paperBook(await prisma.paperTrade.findMany({ where: { userId: u.id }, orderBy: { createdAt: "asc" } }));
   if (side === "SELL") {
-    const trades = await prisma.paperTrade.findMany({ where: { userId: u.id, symbol } });
-    const held = trades.reduce((a, t) => a + (t.side === "BUY" ? t.quantity : -t.quantity), 0);
+    const held = pos.get(symbol)?.q ?? 0;
     if (held < quantity) return { error: `You only hold ${held} ${symbol}` };
+  } else if (quantity * price + fees > cash + 1e-6) {
+    return { error: `Insufficient cash: this order costs K${(quantity * price + fees).toFixed(2)} including fees, but you have K${cash.toFixed(2)}.` };
   }
-  await prisma.paperTrade.create({ data: { userId: u.id, symbol, side, quantity, price, fees: quantity * price * (sec.assetClass === "CRYPTO" ? CRYPTO_FEE_RATE : LUSE_FEE_RATE) } });
+  await prisma.paperTrade.create({ data: { userId: u.id, symbol, side, quantity, price, fees } });
   revalidatePath("/paper");
   return { ok: `${side === "BUY" ? "Bought" : "Sold"} ${quantity} ${symbol} at ${price} (latest close).` };
 }

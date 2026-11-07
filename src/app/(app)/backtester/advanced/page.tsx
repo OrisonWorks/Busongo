@@ -15,7 +15,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
       <PageHeader title="Advanced Backtester" subtitle="Combine any indicators with AND/OR logic, add stops and position sizing, and test a whole portfolio of LuSE stocks or cryptos." />
       {!user && <Notice tone="blue"><Link href="/login?next=/backtester/advanced" className="underline">Sign in</Link> to run advanced backtests. Free accounts get 5 a month.</Notice>}
       <DataNotice />
-      <AdvancedBacktester symbols={symbols} signedIn={!!user} initial={(s?.config as Record<string, unknown>) ?? undefined} />
+      <AdvancedBacktester key={s?.id} symbols={symbols} signedIn={!!user} initial={(s?.config as Record<string, unknown>) ?? undefined} />
     </div>
   );
 }

@@ -6,13 +6,14 @@ import CondBuilder from "./CondBuilder";
 import ResultView from "./ResultView";
 
 export default function AdvancedBacktester({ symbols, signedIn, initial }: { symbols: { symbol: string; name: string; group: string }[]; signedIn: boolean; initial?: Record<string, unknown> }) {
-  const i = (initial || {}) as Partial<{ symbols: string[]; entry: Cond[]; exit: Cond[]; entryJoin: "AND" | "OR"; exitJoin: "AND" | "OR" }>;
+  const i = (initial || {}) as Partial<{ symbols: string[]; entry: Cond[]; exit: Cond[]; entryJoin: "AND" | "OR"; exitJoin: "AND" | "OR"; capital: number; positionPct: number; stopLossPct: number | null; takeProfitPct: number | null; trailingStopPct: number | null; maxHoldDays: number | null; minHoldDays: number | null; from: string; to: string; feeRate: number }>;
+  const str = (v: number | string | null | undefined) => (v == null ? "" : String(v));
   const [sel, setSel] = useState<string[]>(i.symbols || [symbols[0]?.symbol]);
   const [entry, setEntry] = useState<Cond[]>(i.entry || [{ left: { ind: "rsi", period: 14 }, op: "lt", right: { ind: "number", value: 35 } }, { left: { ind: "close" }, op: "gt", right: { ind: "sma", period: 100 } }]);
   const [exit, setExit] = useState<Cond[]>(i.exit || [{ left: { ind: "rsi", period: 14 }, op: "gt", right: { ind: "number", value: 65 } }]);
   const [ej, setEj] = useState<"AND" | "OR">(i.entryJoin || "AND");
   const [xj, setXj] = useState<"AND" | "OR">(i.exitJoin || "OR");
-  const [o, setO] = useState({ capital: 100000, positionPct: 25, stopLossPct: "", takeProfitPct: "", trailingStopPct: "", maxHoldDays: "", minHoldDays: "", from: "", to: "", feeRate: "" });
+  const [o, setO] = useState({ capital: i.capital || 100000, positionPct: i.positionPct || 25, stopLossPct: str(i.stopLossPct), takeProfitPct: str(i.takeProfitPct), trailingStopPct: str(i.trailingStopPct), maxHoldDays: str(i.maxHoldDays), minHoldDays: str(i.minHoldDays), from: str(i.from), to: str(i.to), feeRate: i.feeRate != null ? String(+(i.feeRate * 100).toFixed(6)) : "" });
   const [res, setRes] = useState<RunResponse | null>(null);
   const [pending, start] = useTransition();
   const n = (s: string) => (s === "" ? null : +s);
@@ -22,7 +23,7 @@ export default function AdvancedBacktester({ symbols, signedIn, initial }: { sym
   );
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="card p-4">
           <div className="mb-2 text-sm font-semibold">Universe ({sel.length})</div>
           <div className="max-h-72 space-y-0.5 overflow-y-auto pr-1">

@@ -1,3 +1,6 @@
+import { getUser } from "@/lib/auth";
+import { planAtLeast } from "@/config/plans";
+import PlanLock from "@/components/PlanLock";
 import { getBars } from "@/lib/market";
 import { symbolOptions } from "@/lib/symbols";
 import SymbolPicker from "@/components/SymbolPicker";
@@ -9,6 +12,14 @@ import { fmt, fmtDate } from "@/lib/format";
 
 export const metadata = { title: "Smart Money Concepts" };
 export default async function Page({ searchParams }: { searchParams: Promise<{ symbol?: string }> }) {
+  const viewer = await getUser();
+  if (!planAtLeast(viewer?.effectivePlan ?? "FREE", "ADVANCED")) return (
+    <div>
+      <PageHeader title="Smart Money Concepts" subtitle="Swing structure (HH/HL/LH/LL), break of structure (BOS), change of character (CHoCH), order blocks and unfilled fair-value gaps." />
+      <ToolTabs active="/tools/smc" />
+      <PlanLock min="ADVANCED" feature="Smart Money tools" signedIn={!!viewer} />
+    </div>
+  );
   const syms = await symbolOptions();
   const symbol = ((await searchParams).symbol || syms.find((s) => s.group === "Crypto")?.symbol || syms[0]?.symbol || "").toUpperCase();
   const bars = (await getBars(symbol)).slice(-400);

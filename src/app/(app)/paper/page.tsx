@@ -5,28 +5,21 @@ import { paperTrade } from "../actions";
 import ActionForm from "@/components/ActionForm";
 import { Card, Empty, PageHeader, Stat } from "@/components/ui";
 import { fmt, fmtDate, pct, tone } from "@/lib/format";
+import { PAPER_START, paperBook } from "@/lib/paper";
 
 export const metadata = { title: "Paper Trading" };
-const START = 100000;
 export default async function Page() {
   const u = await requireUser("/paper");
   const [trades, eq, cr] = await Promise.all([prisma.paperTrade.findMany({ where: { userId: u.id }, orderBy: { createdAt: "desc" } }), getQuotes("EQUITY"), getQuotes("CRYPTO")]);
   const px = new Map([...eq, ...cr].map((q) => [q.symbol, q.close ?? 0]));
-  let cash = START;
-  const pos = new Map<string, { q: number; cost: number }>();
-  for (const t of [...trades].reverse()) {
-    const p = pos.get(t.symbol) || { q: 0, cost: 0 };
-    if (t.side === "BUY") { cash -= t.quantity * t.price + t.fees; p.cost += t.quantity * t.price + t.fees; p.q += t.quantity; }
-    else { cash += t.quantity * t.price - t.fees; p.cost -= (p.cost / p.q) * t.quantity; p.q -= t.quantity; }
-    pos.set(t.symbol, p);
-  }
+  const { cash, pos } = paperBook([...trades].reverse());
   const holdings = [...pos].filter(([, p]) => p.q > 0).map(([s, p]) => ({ s, ...p, mv: p.q * (px.get(s) ?? 0) }));
   const total = cash + holdings.reduce((a, h) => a + h.mv, 0);
   return (
     <div>
-      <PageHeader title="Paper Trading" subtitle={`Practise with a virtual K${fmt(START, 0)} portfolio. Orders fill at the latest closing price, with real fees.`} />
+      <PageHeader title="Paper Trading" subtitle={`Practise with a virtual K${fmt(PAPER_START, 0)} portfolio. Orders fill at the latest closing price, with real fees.`} />
       <div className="grid gap-3 sm:grid-cols-3">
-        <Stat label="Portfolio value" value={`K${fmt(total)}`} change={(total / START - 1) * 100} />
+        <Stat label="Portfolio value" value={`K${fmt(total)}`} change={(total / PAPER_START - 1) * 100} />
         <Stat label="Cash" value={`K${fmt(cash)}`} />
         <Stat label="Holdings" value={holdings.length} />
       </div>

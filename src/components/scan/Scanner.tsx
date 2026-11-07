@@ -7,19 +7,20 @@ import { scanAction, saveScan } from "@/app/(app)/scanner/actions";
 import CondBuilder from "@/components/backtest/CondBuilder";
 import { compact, fmt, pct, tone } from "@/lib/format";
 
+export type SavedScanConfig = { conds: Cond[]; join: "AND" | "OR"; asset?: "EQUITY" | "CRYPTO"; sector?: string; minValue?: string };
 type Res = Awaited<ReturnType<typeof scanAction>>;
-export default function Scanner({ sectors, signedIn, watchSymbols, initial }: { sectors: string[]; signedIn: boolean; watchSymbols?: string[]; initial?: { conds: Cond[]; join: "AND" | "OR" } }) {
+export default function Scanner({ sectors, signedIn, watchSymbols, initial }: { sectors: string[]; signedIn: boolean; watchSymbols?: string[]; initial?: SavedScanConfig }) {
   const [conds, setConds] = useState<Cond[]>(initial?.conds || PRESET_SCANS[0].config.conds);
   const [join, setJoin] = useState<"AND" | "OR">(initial?.join || "AND");
-  const [asset, setAsset] = useState<"EQUITY" | "CRYPTO">("EQUITY");
-  const [sector, setSector] = useState("");
-  const [minValue, setMinValue] = useState("");
+  const [asset, setAsset] = useState<"EQUITY" | "CRYPTO">(initial?.asset || "EQUITY");
+  const [sector, setSector] = useState(initial?.sector || "");
+  const [minValue, setMinValue] = useState(initial?.minValue || "");
   const [onlyWatch, setOnlyWatch] = useState(!!watchSymbols?.length);
   const [res, setRes] = useState<Res | null>(null);
   const [pending, start] = useTransition();
   const run = (c = conds, j = join) => start(async () => setRes(await scanAction({ conds: c, join: j, asset, sector: sector || undefined, minValue: minValue ? +minValue : undefined, symbols: onlyWatch ? watchSymbols : undefined })));
   return (
-    <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
       <div className="card h-fit p-3">
         <div className="mb-2 text-sm font-semibold">Preset scans</div>
         {[...new Set(PRESET_SCANS.map((p) => p.group))].map((g) => (
@@ -30,7 +31,7 @@ export default function Scanner({ sectors, signedIn, watchSymbols, initial }: { 
           </div>
         ))}
       </div>
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <div className="card space-y-3 p-4">
           <CondBuilder conds={conds} onChange={setConds} join={join} onJoin={setJoin} />
           <div className="flex flex-wrap items-end gap-2">
@@ -39,7 +40,7 @@ export default function Scanner({ sectors, signedIn, watchSymbols, initial }: { 
             <div><label className="label">Min value traded</label><input type="number" className="input w-36" value={minValue} onChange={(e) => setMinValue(e.target.value)} placeholder="any" /></div>
             {!!watchSymbols?.length && <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={onlyWatch} onChange={(e) => setOnlyWatch(e.target.checked)} /> Watchlist only</label>}
             <button disabled={pending} className="btn btn-primary" onClick={() => run()}>{pending ? "Scanning…" : "Run scan"}</button>
-            {signedIn && <button className="btn btn-ghost" onClick={async () => { const n = prompt("Scan name"); if (n) await saveScan(n, { conds, join }); }}>Save scan</button>}
+            {signedIn && <button className="btn btn-ghost" onClick={async () => { const n = prompt("Scan name"); if (n) await saveScan(n, { conds, join, asset, sector: asset === "EQUITY" ? sector : "", minValue }); }}>Save scan</button>}
           </div>
         </div>
         {res && (

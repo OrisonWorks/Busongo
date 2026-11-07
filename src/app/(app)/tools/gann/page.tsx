@@ -1,3 +1,6 @@
+import { getUser } from "@/lib/auth";
+import { planAtLeast } from "@/config/plans";
+import PlanLock from "@/components/PlanLock";
 import { getBars } from "@/lib/market";
 import { symbolOptions } from "@/lib/symbols";
 import SymbolPicker from "@/components/SymbolPicker";
@@ -8,6 +11,14 @@ import { fmt, fmtDate } from "@/lib/format";
 
 export const metadata = { title: "Gann Tools" };
 export default async function Page({ searchParams }: { searchParams: Promise<{ symbol?: string }> }) {
+  const viewer = await getUser();
+  if (!planAtLeast(viewer?.effectivePlan ?? "FREE", "ADVANCED")) return (
+    <div>
+      <PageHeader title="Gann Tools" subtitle="Square of 9 levels, Gann angles from the major low, and calendar time cycles." />
+      <ToolTabs active="/tools/gann" />
+      <PlanLock min="ADVANCED" feature="Gann tools" signedIn={!!viewer} />
+    </div>
+  );
   const syms = await symbolOptions();
   const symbol = ((await searchParams).symbol || syms[0]?.symbol || "").toUpperCase();
   const bars = await getBars(symbol);
