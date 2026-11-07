@@ -1,3 +1,6 @@
+import { getUser } from "@/lib/auth";
+import { planAtLeast } from "@/config/plans";
+import PlanLock from "@/components/PlanLock";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getQuotes } from "@/lib/market";
@@ -8,6 +11,13 @@ import { compact, fmt } from "@/lib/format";
 export const metadata = { title: "Fundamentals Screener" };
 const COLS = [["pe", "P/E", 1], ["pb", "P/B", 2], ["divYield", "Div yield %", 2], ["roe", "ROE %", 1], ["netMargin", "Net margin %", 1], ["debtToEquity", "D/E", 2], ["payout", "Payout %", 0]] as const;
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const viewer = await getUser();
+  if (!planAtLeast(viewer?.effectivePlan ?? "FREE", "ADVANCED")) return (
+    <div>
+      <PageHeader title="Fundamentals Screener" subtitle="Valuation, profitability and leverage for LuSE companies, from published annual results." />
+      <PlanLock min="ADVANCED" feature="Fundamentals screener tools" signedIn={!!viewer} />
+    </div>
+  );
   const sp = await searchParams;
   const [q, secs] = await Promise.all([getQuotes("EQUITY"), prisma.security.findMany({ where: { assetClass: "EQUITY" }, include: { fundamentals: { orderBy: { fiscalYear: "desc" }, take: 1 } } })]);
   const px = new Map(q.map((x) => [x.symbol, x.close]));

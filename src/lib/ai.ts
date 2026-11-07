@@ -22,14 +22,28 @@ export const SYSTEM = `You are the ${brand.name} research assistant for Zambian 
 
 export function aiConfigured() { return !!process.env.AI_API_KEY; }
 
-export async function complete(messages: Msg[]): Promise<string> {
+export async function complete(messages: Msg[], maxTokens = 900): Promise<string> {
   const base = process.env.AI_BASE_URL || "https://api.openai.com/v1";
   const r = await fetch(`${base}/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.AI_API_KEY}` },
-    body: JSON.stringify({ model: process.env.AI_MODEL || "gpt-4o-mini", messages, temperature: 0.3, max_tokens: 900 }),
+    body: JSON.stringify({ model: process.env.AI_MODEL || "gpt-4o-mini", messages, temperature: 0.3, max_tokens: maxTokens }),
   });
   if (!r.ok) throw new Error(`AI provider error ${r.status}`);
   const j = await r.json();
   return j.choices?.[0]?.message?.content ?? "";
+}
+
+export async function completeJSON<T>(messages: Msg[], parse: (v: unknown) => T, maxTokens = 1200): Promise<T> {
+  const base = process.env.AI_BASE_URL || "https://api.openai.com/v1";
+  const r = await fetch(`${base}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.AI_API_KEY}` },
+    body: JSON.stringify({ model: process.env.AI_MODEL || "gpt-4o-mini", messages, temperature: 0, max_tokens: maxTokens, response_format: { type: "json_object" } }),
+  });
+  if (!r.ok) throw new Error(`AI provider error ${r.status}`);
+  const j = await r.json();
+  const txt: string = j.choices?.[0]?.message?.content ?? "";
+  const body = txt.slice(txt.indexOf("{"), txt.lastIndexOf("}") + 1);
+  return parse(JSON.parse(body));
 }

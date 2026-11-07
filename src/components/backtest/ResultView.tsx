@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import type { RunResponse } from "@/app/(app)/backtester/actions";
 import { journalTrades } from "@/app/(app)/backtester/actions";
 import PriceChart from "@/components/charts/PriceChart";
+import ExplainButton from "@/components/ai/ExplainButton";
 import { LineChartBox } from "@/components/charts/LineChartBox";
 import { fmt, pct, tone } from "@/lib/format";
 
@@ -21,18 +22,19 @@ export default function ResultView({ res, signedIn }: { res: RunResponse; signed
   const markers = useMemo(() => r.trades.filter((t) => t.symbol === sym).flatMap((t) => [{ date: t.entryDate, kind: "buy" as const }, { date: t.exitDate, kind: "sell" as const }]), [r.trades, sym]);
   const bars = useMemo(() => res.bars?.[sym] || [], [res.bars, sym]);
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       {r.warnings.map((w) => <div key={w} className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-200">{w}</div>)}
       {r.equity.length > 0 && (
         <>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 2xl:grid-cols-8">
             {M.map(([k, l, f]) => (
-              <div key={k} className="card p-3">
+              <div key={k} className="card min-w-0 p-3">
                 <div className="text-[11px] text-muted">{l}</div>
                 <div className={`num font-semibold ${["totalReturn", "cagr", "benchmarkReturn", "expectancy"].includes(k) ? tone(r.metrics[k]) : ""}`}>{f(r.metrics[k] ?? null)}</div>
               </div>
             ))}
           </div>
+          <ExplainButton input={{ metrics: r.metrics, warnings: r.warnings, perSymbol: r.perSymbol }} />
           <div className="card p-4">
             <div className="mb-2 text-sm font-semibold">Equity curve vs buy & hold</div>
             <LineChartBox data={r.equity.map((e) => ({ ...e, equity: +e.equity.toFixed(2), benchmark: +e.benchmark.toFixed(2) }))} x="date" lines={[{ key: "equity", name: "Strategy", color: "#10b981" }, { key: "benchmark", name: "Buy & hold", color: "#64748b", dashed: true }]} />
@@ -56,14 +58,14 @@ export default function ResultView({ res, signedIn }: { res: RunResponse; signed
         </div>
       )}
       <div className="card overflow-x-auto p-4">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <span className="text-sm font-semibold">Trade list ({r.trades.length})</span>
           {signedIn && r.trades.length > 0 && <button className="btn btn-ghost" onClick={async () => { const x = await journalTrades(r.trades); setMsg(`${x.n} entries added to your journal.`); }}>Save trades to journal</button>}
         </div>
         {msg && <p className="mb-2 text-sm text-up">{msg}</p>}
         {r.trades.length ? (
           <table className="data"><thead><tr><th>Symbol</th><th>Entry</th><th className="r">Price</th><th>Exit</th><th className="r">Price</th><th className="r">Qty</th><th className="r">Fees</th><th className="r">P&L</th><th className="r">%</th><th className="r">Bars</th><th>Reason</th></tr></thead>
-            <tbody>{r.trades.map((t, i) => <tr key={i}><td>{t.symbol}</td><td>{t.entryDate}</td><td className="num r">{fmt(t.entryPrice)}</td><td>{t.exitDate}</td><td className="num r">{fmt(t.exitPrice)}</td><td className="num r">{fmt(t.qty, 0)}</td><td className="num r">{fmt(t.fees)}</td><td className={`num r ${tone(t.pnl)}`}>{fmt(t.pnl)}</td><td className={`num r ${tone(t.pnlPct)}`}>{pct(t.pnlPct)}</td><td className="r">{t.bars}</td><td className="text-muted">{t.reason}</td></tr>)}</tbody></table>
+            <tbody>{r.trades.map((t, i) => <tr key={i}><td>{t.symbol}</td><td>{t.entryDate}</td><td className="num r">{fmt(t.entryPrice)}</td><td>{t.exitDate}</td><td className="num r">{fmt(t.exitPrice)}</td><td className="num r">{fmt(t.qty, Number.isInteger(t.qty) ? 0 : 6)}</td><td className="num r">{fmt(t.fees)}</td><td className={`num r ${tone(t.pnl)}`}>{fmt(t.pnl)}</td><td className={`num r ${tone(t.pnlPct)}`}>{pct(t.pnlPct)}</td><td className="r">{t.bars}</td><td className="text-muted">{t.reason}</td></tr>)}</tbody></table>
         ) : <p className="text-sm text-muted">No trades were triggered in this period.</p>}
       </div>
       {res.runId && <p className="text-xs text-muted">Run saved · share link: <a className="text-brand" href={`/backtester/runs/${res.runId}`}>/backtester/runs/{res.runId}</a></p>}

@@ -17,6 +17,8 @@ export type BacktestConfig = {
   positionPct: number;
   feeRate: number;
   benchmarkYield?: number | null;
+  /** Symbols that may be bought in fractional units (e.g. crypto). Others trade in whole shares. */
+  fractional?: string[];
 };
 
 export type Trade = {
@@ -64,6 +66,8 @@ export function runBacktest(cfg: BacktestConfig, data: Map<string, Candle[]>): B
   const equity: BacktestResult["equity"] = [];
   const last = new Map<string, number>();
   const fee = (v: number) => v * cfg.feeRate;
+  const frac = new Set(cfg.fractional || []);
+  const skipped = new Map<string, number>();
   // Buy-and-hold benchmark: equal-weight across symbols, bought on the first session each has data in range.
   const bh = new Map<string, number>();
   let bhCash = cfg.capital;
@@ -98,8 +102,10 @@ export function runBacktest(cfg: BacktestConfig, data: Map<string, Candle[]>): B
       else if (ord === "buy" && !p) {
         const equityNow = cash + [...pos.values()].reduce((a, x) => a + x.qty * (last.get(x.symbol) ?? x.entryPrice), 0);
         const budget = Math.min(cash, (equityNow * cfg.positionPct) / 100);
-        const qty = Math.floor(budget / (bar.close * (1 + cfg.feeRate)));
-        if (qty > 0) {
+        const raw = budget / (bar.close * (1 + cfg.feeRate));
+        const qty = frac.has(sym) ? Math.floor(raw * 1e8) / 1e8 : Math.floor(raw);
+        if (qty <= 0) skipped.set(sym, (skipped.get(sym) || 0) + 1);
+        else {
           const f = fee(qty * bar.close);
           cash -= qty * bar.close + f;
           pos.set(sym, { symbol: sym, qty, entryPrice: bar.close, entryDate: date, entryIdx: i, fees: f, peak: bar.close });
@@ -130,6 +136,7 @@ export function runBacktest(cfg: BacktestConfig, data: Map<string, Candle[]>): B
     close(p, s.bars[i].close, lastDate, i, "End of test");
   }
   if (equity.length) equity[equity.length - 1].equity = cash;
+  for (const [sym, n] of skipped) warnings.push(`${n} ${sym} entry signal${n > 1 ? "s were" : " was"} skipped because the position budget was too small to buy one unit. Increase capital or position size.`);
   return { trades, equity, metrics: metrics(cfg, trades, equity), perSymbol: perSymbol(trades), warnings };
 }
 

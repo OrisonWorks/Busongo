@@ -142,8 +142,18 @@ model Announcement {
   category   String?
   date       DateTime  @db.Date
   url        String?
+  summary    String?
+  summarizedAt DateTime?
 
   @@unique([title, date])
+}
+
+model DailyBrief {
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date
+  content   String
+  source    String   @default("template")
+  createdAt DateTime @default(now())
 }
 
 model TbillAuction {

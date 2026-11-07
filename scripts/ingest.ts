@@ -3,8 +3,10 @@ import { ingestLuse } from "../src/lib/ingest/luse";
 import { ingestBoz } from "../src/lib/ingest/boz";
 import { ingestCrypto } from "../src/lib/ingest/crypto";
 import { evaluateAlerts } from "../src/lib/alerts";
+import { generateBrief } from "../src/lib/brief";
+import { summarizeAnnouncements } from "../src/lib/ai/sens";
 
-const jobs: Record<string, () => Promise<unknown>> = { luse: ingestLuse, boz: ingestBoz, crypto: () => ingestCrypto() };
+const jobs: Record<string, () => Promise<unknown>> = { luse: ingestLuse, boz: ingestBoz, crypto: () => ingestCrypto(), brief: generateBrief, "sens-ai": () => summarizeAnnouncements(15) };
 
 async function run(name: string) {
   const r = await prisma.ingestRun.create({ data: { source: name, status: "running" } });

@@ -5,6 +5,7 @@ import { getIndex, getQuotes, latestMacro } from "@/lib/market";
 import { yieldCurve } from "@/lib/fixed-income";
 import { getUsage } from "@/lib/usage";
 import { PLANS } from "@/config/plans";
+import BriefCard from "@/components/BriefCard";
 import { Card, Chg, PageHeader, Stat } from "@/components/ui";
 import { fmt, fmtDate, kwacha, pct } from "@/lib/format";
 
@@ -33,6 +34,7 @@ export default async function Page() {
         <Stat label="AI messages" value={`${ai.used}/${ai.limit}`} sub="this month" />
         <Stat label="Advanced backtests" value={`${bt.used}/${bt.limit}`} sub={`${alerts}/${plan.alerts} alerts active`} />
       </div>
+      <BriefCard className="mt-4" />
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card title="Watchlist" action={<Link href="/watchlist" className="text-xs text-brand">Manage →</Link>}>
           {w.length ? w.map((x) => <Link key={x.symbol} href={`/stocks/${x.symbol}`} className="flex justify-between border-b border-line/50 py-1.5 text-sm last:border-0"><span>{x.symbol}</span><span>{kwacha(x.close)} <Chg v={x.changePct} /></span></Link>) : <p className="text-sm text-muted">Add stocks with ☆ Watch on any stock page.</p>}

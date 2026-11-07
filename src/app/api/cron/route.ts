@@ -3,10 +3,11 @@ import { prisma } from "@/lib/db";
 import { ingestBoz } from "@/lib/ingest/boz";
 import { ingestCrypto } from "@/lib/ingest/crypto";
 import { evaluateAlerts } from "@/lib/alerts";
+import { generateBrief } from "@/lib/brief";
 
 export const maxDuration = 300;
 // LuSE needs a headless browser, so it runs from the GitHub Actions workflow (scripts/ingest.ts) instead.
-const JOBS = { boz: ingestBoz, crypto: () => ingestCrypto(10) } as const;
+const JOBS = { boz: ingestBoz, crypto: () => ingestCrypto(10), brief: generateBrief } as const;
 
 export async function GET(req: Request) {
   if (!process.env.CRON_SECRET || req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) return NextResponse.json({ error: "unauthorized" }, { status: 401 });

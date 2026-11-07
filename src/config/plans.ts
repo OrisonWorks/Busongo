@@ -58,6 +58,10 @@ export function effectivePlan(user: { plan: Plan; planExpiresAt: Date | null } |
   return user.plan;
 }
 
+export function planAtLeast(plan: Plan, min: Plan) {
+  return PLAN_ORDER.indexOf(plan) >= PLAN_ORDER.indexOf(min);
+}
+
 export function historyStart(plan: Plan): Date | null {
   const d = PLANS[plan].historyDays;
   if (d == null) return null;

@@ -2,7 +2,7 @@ import { prisma } from "../db";
 import { num, dmy } from "./util";
 import { LUSE_SECURITIES } from "../data/securities";
 
-const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+export const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
 type Row = Record<string, string>;
 

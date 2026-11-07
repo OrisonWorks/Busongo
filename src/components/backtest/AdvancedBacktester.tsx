@@ -1,18 +1,20 @@
 "use client";
 import { useState, useTransition } from "react";
+import DescribeBox from "@/components/ai/DescribeBox";
 import type { Cond } from "@/lib/engine/series";
 import { runBacktestAction, saveStrategy, type RunResponse } from "@/app/(app)/backtester/actions";
 import CondBuilder from "./CondBuilder";
 import ResultView from "./ResultView";
 
 export default function AdvancedBacktester({ symbols, signedIn, initial }: { symbols: { symbol: string; name: string; group: string }[]; signedIn: boolean; initial?: Record<string, unknown> }) {
-  const i = (initial || {}) as Partial<{ symbols: string[]; entry: Cond[]; exit: Cond[]; entryJoin: "AND" | "OR"; exitJoin: "AND" | "OR" }>;
+  const i = (initial || {}) as Partial<{ symbols: string[]; entry: Cond[]; exit: Cond[]; entryJoin: "AND" | "OR"; exitJoin: "AND" | "OR"; capital: number; positionPct: number; stopLossPct: number | null; takeProfitPct: number | null; trailingStopPct: number | null; maxHoldDays: number | null; minHoldDays: number | null; from: string; to: string; feeRate: number }>;
+  const str = (v: number | string | null | undefined) => (v == null ? "" : String(v));
   const [sel, setSel] = useState<string[]>(i.symbols || [symbols[0]?.symbol]);
   const [entry, setEntry] = useState<Cond[]>(i.entry || [{ left: { ind: "rsi", period: 14 }, op: "lt", right: { ind: "number", value: 35 } }, { left: { ind: "close" }, op: "gt", right: { ind: "sma", period: 100 } }]);
   const [exit, setExit] = useState<Cond[]>(i.exit || [{ left: { ind: "rsi", period: 14 }, op: "gt", right: { ind: "number", value: 65 } }]);
   const [ej, setEj] = useState<"AND" | "OR">(i.entryJoin || "AND");
   const [xj, setXj] = useState<"AND" | "OR">(i.exitJoin || "OR");
-  const [o, setO] = useState({ capital: 100000, positionPct: 25, stopLossPct: "", takeProfitPct: "", trailingStopPct: "", maxHoldDays: "", minHoldDays: "", from: "", to: "", feeRate: "" });
+  const [o, setO] = useState({ capital: i.capital || 100000, positionPct: i.positionPct || 25, stopLossPct: str(i.stopLossPct), takeProfitPct: str(i.takeProfitPct), trailingStopPct: str(i.trailingStopPct), maxHoldDays: str(i.maxHoldDays), minHoldDays: str(i.minHoldDays), from: str(i.from), to: str(i.to), feeRate: i.feeRate != null ? String(+(i.feeRate * 100).toFixed(6)) : "" });
   const [res, setRes] = useState<RunResponse | null>(null);
   const [pending, start] = useTransition();
   const n = (s: string) => (s === "" ? null : +s);
@@ -22,7 +24,7 @@ export default function AdvancedBacktester({ symbols, signedIn, initial }: { sym
   );
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="card p-4">
           <div className="mb-2 text-sm font-semibold">Universe ({sel.length})</div>
           <div className="max-h-72 space-y-0.5 overflow-y-auto pr-1">
@@ -37,6 +39,14 @@ export default function AdvancedBacktester({ symbols, signedIn, initial }: { sym
           </div>
         </div>
         <div className="card space-y-4 p-4 lg:col-span-2">
+          <DescribeBox placeholder="e.g. Buy when RSI is under 30 and price is above the 200-day average. Sell when RSI goes above 70, with a 5% stop loss." onApply={(s) => {
+            if (s.entry.length) setEntry(s.entry);
+            setExit(s.exit);
+            setEj(s.entryJoin);
+            setXj(s.exitJoin);
+            const v = (x: number | null | undefined) => (x == null ? "" : String(x));
+            setO((p) => ({ ...p, stopLossPct: v(s.stopLossPct), takeProfitPct: v(s.takeProfitPct), trailingStopPct: v(s.trailingStopPct), maxHoldDays: v(s.maxHoldDays) }));
+          }} />
           <div><div className="mb-2 text-sm font-semibold text-up">Entry conditions</div><CondBuilder conds={entry} onChange={setEntry} join={ej} onJoin={setEj} /></div>
           <div><div className="mb-2 text-sm font-semibold text-down">Exit conditions</div><CondBuilder conds={exit} onChange={setExit} join={xj} onJoin={setXj} /></div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">

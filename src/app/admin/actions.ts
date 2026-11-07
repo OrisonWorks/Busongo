@@ -8,6 +8,11 @@ import { ingestBoz } from "@/lib/ingest/boz";
 import { ingestCrypto } from "@/lib/ingest/crypto";
 import { ingestLuse } from "@/lib/ingest/luse";
 import { evaluateAlerts } from "@/lib/alerts";
+import { generateBrief } from "@/lib/brief";
+import { summarizeAnnouncements } from "@/lib/ai/sens";
+import { extractFundamentals, toCsv } from "@/lib/ai/fundamentals";
+import { fetchPdf, pdfTextFromBuffer } from "@/lib/ai/pdf";
+import { aiConfigured } from "@/lib/ai";
 import type { FormState } from "@/app/(auth)/actions";
 
 async function text(fd: FormData) {
@@ -39,11 +44,11 @@ export async function addCorporateAction(_: FormState, fd: FormData): Promise<Fo
   revalidatePath("/calendar");
   return { ok: "Corporate action added." };
 }
-export async function runIngest(job: "luse" | "boz" | "crypto") {
+export async function runIngest(job: "luse" | "boz" | "crypto" | "brief" | "sens-ai") {
   await requireAdmin();
   const run = await prisma.ingestRun.create({ data: { source: job, status: "running" } });
   try {
-    const r = await (job === "luse" ? ingestLuse() : job === "boz" ? ingestBoz() : ingestCrypto(10));
+    const r = await (job === "luse" ? ingestLuse() : job === "boz" ? ingestBoz() : job === "brief" ? generateBrief() : job === "sens-ai" ? summarizeAnnouncements(10) : ingestCrypto(10));
     await evaluateAlerts();
     await prisma.ingestRun.update({ where: { id: run.id }, data: { status: "ok", message: JSON.stringify(r), endedAt: new Date() } });
   } catch (e) {
@@ -58,4 +63,30 @@ export async function setPlan(userId: string, fd: FormData) {
   const exp = new Date(); exp.setUTCMonth(exp.getUTCMonth() + months);
   await prisma.user.update({ where: { id: userId }, data: { plan, planExpiresAt: plan === "FREE" ? null : exp } });
   revalidatePath("/admin");
+}
+
+export type ExtractState = { error?: string; csv?: string; notes?: string } | undefined;
+export async function extractFundamentalsAction(_: ExtractState, fd: FormData): Promise<ExtractState> {
+  await requireAdmin();
+  if (!aiConfigured()) return { error: "Set AI_API_KEY to extract figures from PDFs." };
+  const symbol = String(fd.get("symbol") || "").toUpperCase();
+  const sec = await prisma.security.findUnique({ where: { symbol } });
+  if (!sec) return { error: "Choose a listed company." };
+  const f = fd.get("pdf");
+  const url = String(fd.get("url") || "").trim();
+  try {
+    let buf: Uint8Array;
+    if (f instanceof File && f.size) {
+      if (f.size > 25 * 1024 * 1024) return { error: "PDF is larger than 25 MB." };
+      buf = new Uint8Array(await f.arrayBuffer());
+    } else if (/^https?:\/\//.test(url)) buf = await fetchPdf(url);
+    else return { error: "Upload a PDF or paste its URL." };
+    const text = await pdfTextFromBuffer(buf, 40000);
+    if (text.length < 300) return { error: "No readable text in that PDF (it may be a scanned image)." };
+    const e = await extractFundamentals(text, sec.symbol, sec.name);
+    return { csv: toCsv(sec.symbol, e, url || undefined), notes: [e.period && `Period: ${e.period}`, e.currency && e.currency !== "ZMW" && `Currency: ${e.currency}`, e.notes].filter(Boolean).join(" · ") };
+  } catch (err) {
+    console.error("extractFundamentals", err);
+    return { error: `Extraction failed: ${String(err).slice(0, 160)}` };
+  }
 }

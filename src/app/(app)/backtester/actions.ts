@@ -1,5 +1,6 @@
 "use server";
 import { z } from "zod";
+import { condSchema } from "@/lib/engine/schema";
 import { prisma } from "@/lib/db";
 import { getUser, requireUser } from "@/lib/auth";
 import { getBars, getSecurity } from "@/lib/market";
@@ -10,8 +11,7 @@ import { CRYPTO_FEE_RATE, LUSE_FEE_RATE } from "@/config/fees";
 import type { Candle } from "@/lib/engine/series";
 import type { Prisma } from "@prisma/client";
 
-const operand = z.object({ ind: z.string(), period: z.number().int().min(1).max(1000).optional(), value: z.number().optional(), shift: z.number().int().min(0).max(250).optional() });
-const cond = z.object({ left: operand, op: z.enum(["gt", "lt", "gte", "lte", "crossAbove", "crossBelow"]), right: operand });
+const cond = condSchema;
 const cfgSchema = z.object({
   symbols: z.array(z.string()).min(1).max(30),
   from: z.string().optional(), to: z.string().optional(),
@@ -37,10 +37,12 @@ export async function runBacktestAction(kind: "basic" | "advanced", raw: unknown
   const start = historyStart(plan);
   const data = new Map<string, Candle[]>();
   let crypto = false;
+  const fractional: string[] = [];
   for (const s of p.data.symbols) {
     const sec = await getSecurity(s);
     if (!sec) return { error: `Unknown symbol ${s}` };
     crypto ||= sec.assetClass === "CRYPTO";
+    if (sec.assetClass === "CRYPTO") fractional.push(sec.symbol);
     data.set(sec.symbol, await getBars(sec.symbol));
   }
   let usage;
@@ -52,7 +54,7 @@ export async function runBacktestAction(kind: "basic" | "advanced", raw: unknown
   const latestTbill = await prisma.tbillAuction.findFirst({ where: { tenorDays: 364 }, orderBy: { auctionDate: "desc" } });
   const minFrom = start?.toISOString().slice(0, 10);
   const from = minFrom && (!p.data.from || p.data.from < minFrom) ? minFrom : p.data.from;
-  const cfg: BacktestConfig = { ...p.data, from, feeRate: p.data.feeRate ?? (crypto ? CRYPTO_FEE_RATE : LUSE_FEE_RATE), benchmarkYield: latestTbill?.yield ?? null } as BacktestConfig;
+  const cfg: BacktestConfig = { ...p.data, from, feeRate: p.data.feeRate ?? (crypto ? CRYPTO_FEE_RATE : LUSE_FEE_RATE), benchmarkYield: latestTbill?.yield ?? null, fractional } as BacktestConfig;
   const result = runBacktest(cfg, data);
   if (start) result.warnings.push(`Trades are simulated from ${from}. Your ${PLANS[plan].label} plan includes ${PLANS[plan].historyLabel.toLowerCase()}. Upgrade for longer history.`);
   let runId: string | undefined;
