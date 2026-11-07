@@ -1,6 +1,6 @@
 export const brand = {
-  name: process.env.NEXT_PUBLIC_BRAND_NAME || "ZedQuant",
-  shortName: process.env.NEXT_PUBLIC_BRAND_SHORT || "ZedQuant",
+  name: process.env.NEXT_PUBLIC_BRAND_NAME || "Busongo",
+  shortName: process.env.NEXT_PUBLIC_BRAND_SHORT || "Busongo",
   tagline: "The #1 backtesting & research platform for Zambian markets",
   description:
     "AI-powered stock research and backtesting for the Lusaka Securities Exchange. Screen LuSE stocks, analyse fundamentals, track GRZ bonds and T-bills, build strategies and backtest ideas.",

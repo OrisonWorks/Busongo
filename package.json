@@ -1,5 +1,5 @@
 {
-  "name": "zm-markets",
+  "name": "busongo",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,8 +10,6 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx scripts/seed.ts",
-    "seed:demo": "tsx scripts/seed-demo.ts",
-    "purge:demo": "tsx scripts/purge-demo.ts",
     "ingest": "tsx scripts/ingest.ts",
     "ingest:luse": "tsx scripts/ingest.ts luse",
     "ingest:boz": "tsx scripts/ingest.ts boz",
