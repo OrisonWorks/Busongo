@@ -17,9 +17,11 @@ export async function extractFundamentals(text: string, symbol: string, name: st
   return completeJSON([{ role: "system", content: FUNDAMENTALS_PROMPT }, { role: "user", content: `Company: ${name} (${symbol}), listed on LuSE.\n\n${text}` }], (v) => extracted.parse(v), 700);
 }
 
+const csvCell = (s: string) => s.replace(/[",\n]/g, " ").trim();
+
 /** Render extracted figures as a CSV row accepted by the admin fundamentals importer. */
 export function toCsv(symbol: string, e: Extracted, sourceUrl?: string) {
-  const head = ["symbol", "fiscalyear", ...FUND_COLS.map((c) => c.toLowerCase()), ...(sourceUrl ? ["sourceurl"] : [])];
-  const row = [symbol, e.fiscalYear, ...FUND_COLS.map((c) => e[c] ?? ""), ...(sourceUrl ? [sourceUrl] : [])];
+  const head = ["symbol", "fiscalyear", "period", "currency", ...FUND_COLS.map((c) => c.toLowerCase()), ...(sourceUrl ? ["sourceurl"] : [])];
+  const row = [symbol, e.fiscalYear, csvCell(e.period || "FY"), csvCell(e.currency || "ZMW"), ...FUND_COLS.map((c) => e[c] ?? ""), ...(sourceUrl ? [sourceUrl] : [])];
   return `${head.join(",")}\n${row.join(",")}`;
 }
