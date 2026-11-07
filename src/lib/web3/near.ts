@@ -4,7 +4,7 @@ import { Account, JsonRpcProvider } from "near-api-js";
 const mainnet = process.env.NEAR_NETWORK === "mainnet";
 export const NEAR = {
   network: mainnet ? "mainnet" : "testnet",
-  rpc: process.env.NEAR_RPC_URL || (mainnet ? "https://rpc.mainnet.near.org" : "https://rpc.testnet.near.org"),
+  rpc: process.env.NEAR_RPC_URL || (mainnet ? "https://rpc.mainnet.fastnear.com" : "https://rpc.testnet.fastnear.com"),
   wallet: process.env.NEAR_WALLET_URL || (mainnet ? "https://app.mynearwallet.com" : "https://testnet.mynearwallet.com"),
   explorer: mainnet ? "https://nearblocks.io" : "https://testnet.nearblocks.io",
   social: mainnet ? "social.near" : "v1.social08.testnet",
@@ -24,8 +24,14 @@ export const txUrl = (h: string) => `${NEAR.explorer}/txns/${h}`;
 export const accountUrl = (a: string) => `${NEAR.explorer}/address/${a}`;
 
 async function rpc<T>(method: string, params: unknown): Promise<T> {
-  const r = await fetch(NEAR.rpc, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: "busongo", method, params }), cache: "no-store" });
-  const j = await r.json();
+  const body = JSON.stringify({ jsonrpc: "2.0", id: "busongo", method, params });
+  let r = await fetch(NEAR.rpc, { method: "POST", headers: { "Content-Type": "application/json" }, body, cache: "no-store" });
+  if (r.status === 429 || r.status >= 500) {
+    await new Promise((ok) => setTimeout(ok, 1000));
+    r = await fetch(NEAR.rpc, { method: "POST", headers: { "Content-Type": "application/json" }, body, cache: "no-store" });
+  }
+  const j = await r.json().catch(() => null);
+  if (!j) throw new Error(`NEAR RPC unavailable (HTTP ${r.status})`);
   if (j.error) throw new Error(j.error.cause?.name || j.error.message || "NEAR RPC error");
   return j.result as T;
 }
