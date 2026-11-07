@@ -24,7 +24,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
   const hist = buyH.map((b) => { const o = offAt(b.date); const s = sellAt.get(b.date); const md = s ? (b.value + s) / 2 : b.value; return { date: b.date, premium: o ? +p2pPremium(md, o).toFixed(2) : null }; }).filter((x) => x.premium != null);
   const first = offH[0], lastOff = offH[offH.length - 1];
   const spanDays = first && lastOff ? (Date.parse(lastOff.date) - Date.parse(first.date)) / 86400000 : 0;
-  const fullYear = spanDays >= 360;
+  const fullYear = spanDays >= 365;
   const base = fullYear ? offAt(new Date(Date.parse(lastOff.date) - 365 * 86400000).toISOString().slice(0, 10)) : first?.value ?? null;
   const fxHist = off && base && spanDays >= 30 ? ((off / base) ** (fullYear ? 1 : 365 / spanDays) - 1) * 100 : 0;
   const fxLabel = spanDays < 30 ? "Not enough BoZ exchange-rate history yet, so 0% is assumed." : `${fullYear ? "Last 12 months" : `Since ${fmtDate(first.date)}, annualised`}: ${pct(fxHist)} (${fxHist < 0 ? "kwacha strengthened" : "kwacha weakened"}).`;
