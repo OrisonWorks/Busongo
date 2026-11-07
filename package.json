@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx scripts/seed.ts",
-    "ingest": "tsx scripts/ingest.ts",
+    "ingest": "tsx --conditions=react-server scripts/ingest.ts",
     "ingest:luse": "tsx scripts/ingest.ts luse",
     "ingest:boz": "tsx scripts/ingest.ts boz",
     "ingest:crypto": "tsx scripts/ingest.ts crypto",
@@ -30,6 +30,7 @@
     "react-dom": "19.1.0",
     "recharts": "^3.10.1",
     "server-only": "^0.0.1",
+    "unpdf": "^2.1.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {

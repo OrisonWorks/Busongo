@@ -3,6 +3,7 @@ import { breadth, getAnnouncements, getIndex, getQuotes, latestMacro } from "@/l
 import { prisma } from "@/lib/db";
 import MarketTabs from "@/components/MarketTabs";
 import { Card, Chg, PageHeader, Stat } from "@/components/ui";
+import BriefCard from "@/components/BriefCard";
 import { compact, fmt, fmtDate, kwacha } from "@/lib/format";
 import { LineChartBox } from "@/components/charts/LineChartBox";
 import QuoteTable from "@/components/QuoteTable";
@@ -24,6 +25,7 @@ export default async function Page() {
       <PageHeader title="Market Terminal" subtitle={`Lusaka Securities Exchange end-of-day data · ${fmtDate(l?.date)}`} />
       <MarketTabs active="/market" />
       <DataNotice need={2} />
+      <BriefCard className="mb-4" />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <Stat label="LASI" value={fmt(l?.value)} change={l?.pctChange} />
         <Stat label="Value traded" value={kwacha(l?.valueTraded ?? b.value, 0)} sub={`${compact(l?.volume ?? b.volume)} shares`} />

@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import type { RunResponse } from "@/app/(app)/backtester/actions";
 import { journalTrades } from "@/app/(app)/backtester/actions";
 import PriceChart from "@/components/charts/PriceChart";
+import ExplainButton from "@/components/ai/ExplainButton";
 import { LineChartBox } from "@/components/charts/LineChartBox";
 import { fmt, pct, tone } from "@/lib/format";
 
@@ -33,6 +34,7 @@ export default function ResultView({ res, signedIn }: { res: RunResponse; signed
               </div>
             ))}
           </div>
+          <ExplainButton input={{ metrics: r.metrics, warnings: r.warnings, perSymbol: r.perSymbol }} />
           <div className="card p-4">
             <div className="mb-2 text-sm font-semibold">Equity curve vs buy & hold</div>
             <LineChartBox data={r.equity.map((e) => ({ ...e, equity: +e.equity.toFixed(2), benchmark: +e.benchmark.toFixed(2) }))} x="date" lines={[{ key: "equity", name: "Strategy", color: "#10b981" }, { key: "benchmark", name: "Buy & hold", color: "#64748b", dashed: true }]} />
