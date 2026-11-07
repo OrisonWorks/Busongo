@@ -3,7 +3,7 @@ import { planAtLeast } from "@/config/plans";
 import PlanLock from "@/components/PlanLock";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { getQuotes } from "@/lib/market";
+import { getQuotes, latestMacro } from "@/lib/market";
 import { valuation } from "@/lib/fundamentals";
 import { Card, Notice, PageHeader } from "@/components/ui";
 import { compact, fmt } from "@/lib/format";
@@ -21,7 +21,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const sp = await searchParams;
   const [q, secs] = await Promise.all([getQuotes("EQUITY"), prisma.security.findMany({ where: { assetClass: "EQUITY" }, include: { fundamentals: { where: { period: "FY" }, orderBy: { fiscalYear: "desc" }, take: 1 } } })]);
   const px = new Map(q.map((x) => [x.symbol, x.close]));
-  let rows = secs.map((s) => ({ s, f: s.fundamentals[0], v: valuation(s.fundamentals[0], px.get(s.symbol) ?? null, s.sharesOutstanding) }));
+  const usdZmw = (await latestMacro()).USDZMW?.value;
+  let rows = secs.map((s) => ({ s, f: s.fundamentals[0], v: valuation(s.fundamentals[0], px.get(s.symbol) ?? null, s.sharesOutstanding, s.currency, usdZmw) }));
   const num = (k: string) => (sp[k] ? +sp[k]! : null);
   const maxPe = num("maxPe"), minDy = num("minDy"), minRoe = num("minRoe");
   if (maxPe != null) rows = rows.filter((r) => r.v.pe != null && r.v.pe <= maxPe);

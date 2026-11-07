@@ -39,7 +39,8 @@ export default async function Page({ params }: { params: Promise<{ symbol: strin
   const yr = bars.slice(-252);
   const hi52 = yr.length ? Math.max(...yr.map((b) => b.close)) : null, lo52 = yr.length ? Math.min(...yr.map((b) => b.close)) : null;
   const ret = (n: number) => (bars.length > n ? (last!.close / bars[bars.length - 1 - n].close - 1) * 100 : null);
-  const v = valuation(funds[0], last?.close ?? null, sec.sharesOutstanding);
+  const usdZmw = (fx ?? (funds[0] && funds[0].currency !== sec.currency ? await latestMacro() : null))?.USDZMW?.value ?? null;
+  const v = valuation(funds[0], last?.close ?? null, sec.sharesOutstanding, sec.currency, usdZmw);
   const pv = last ? pivots(last.high, last.low, last.close) : null;
   const sma = (n: number) => bars.map((b, k) => ({ date: b.date, value: s.get({ ind: "sma", period: n })[k] }));
   const raw = last ? await prisma.priceBar.findFirst({ where: { securityId: sec.id }, orderBy: { date: "desc" } }) : null;
