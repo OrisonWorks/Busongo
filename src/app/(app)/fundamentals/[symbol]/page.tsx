@@ -8,7 +8,7 @@ import { BarChartBox } from "@/components/charts/LineChartBox";
 import { compact, fmt } from "@/lib/format";
 
 export default async function Page({ params }: { params: Promise<{ symbol: string }> }) {
-  const s = await prisma.security.findUnique({ where: { symbol: (await params).symbol.toUpperCase() }, include: { fundamentals: { orderBy: { fiscalYear: "asc" } } } });
+  const s = await prisma.security.findUnique({ where: { symbol: (await params).symbol.toUpperCase() }, include: { fundamentals: { where: { period: "FY" }, orderBy: { fiscalYear: "asc" } } } });
   if (!s) notFound();
   const px = (await getQuotes("EQUITY")).find((q) => q.symbol === s.symbol)?.close ?? null;
   const f = s.fundamentals;
