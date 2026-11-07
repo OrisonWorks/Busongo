@@ -16,10 +16,14 @@ export async function ingestStableYields(top = 25) {
     .slice(0, top);
   const now = new Date();
   const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  for (const p of pools) {
-    const d = { project: p.project, chain: p.chain, symbol: p.symbol, apy: p.apy as number, apyBase: p.apyBase, apyReward: p.apyReward, tvlUsd: p.tvlUsd };
-    await prisma.stableYield.upsert({ where: { date_pool: { date, pool: p.pool } }, update: d, create: { date, pool: p.pool, ...d } });
-  }
-  if (pools.length) await prisma.stableYield.deleteMany({ where: { date, pool: { notIn: pools.map((p) => p.pool) } } });
+  // One snapshot at a time: concurrent runs (cron + admin) must not delete each other's rows mid-write.
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('stable_yield_snapshot'))`;
+    for (const p of pools) {
+      const d = { project: p.project, chain: p.chain, symbol: p.symbol, apy: p.apy as number, apyBase: p.apyBase, apyReward: p.apyReward, tvlUsd: p.tvlUsd };
+      await tx.stableYield.upsert({ where: { date_pool: { date, pool: p.pool } }, update: d, create: { date, pool: p.pool, ...d } });
+    }
+    if (pools.length) await tx.stableYield.deleteMany({ where: { date, pool: { notIn: pools.map((p) => p.pool) } } });
+  }, { timeout: 60000 });
   return { pools: pools.length };
 }
