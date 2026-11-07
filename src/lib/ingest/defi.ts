@@ -20,5 +20,6 @@ export async function ingestStableYields(top = 25) {
     const d = { project: p.project, chain: p.chain, symbol: p.symbol, apy: p.apy as number, apyBase: p.apyBase, apyReward: p.apyReward, tvlUsd: p.tvlUsd };
     await prisma.stableYield.upsert({ where: { date_pool: { date, pool: p.pool } }, update: d, create: { date, pool: p.pool, ...d } });
   }
+  if (pools.length) await prisma.stableYield.deleteMany({ where: { date, pool: { notIn: pools.map((p) => p.pool) } } });
   return { pools: pools.length };
 }
