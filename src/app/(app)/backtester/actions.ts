@@ -1,5 +1,6 @@
 "use server";
 import { z } from "zod";
+import { condSchema } from "@/lib/engine/schema";
 import { prisma } from "@/lib/db";
 import { getUser, requireUser } from "@/lib/auth";
 import { getBars, getSecurity } from "@/lib/market";
@@ -10,8 +11,7 @@ import { CRYPTO_FEE_RATE, LUSE_FEE_RATE } from "@/config/fees";
 import type { Candle } from "@/lib/engine/series";
 import type { Prisma } from "@prisma/client";
 
-const operand = z.object({ ind: z.string(), period: z.number().int().min(1).max(1000).optional(), value: z.number().optional(), shift: z.number().int().min(0).max(250).optional() });
-const cond = z.object({ left: operand, op: z.enum(["gt", "lt", "gte", "lte", "crossAbove", "crossBelow"]), right: operand });
+const cond = condSchema;
 const cfgSchema = z.object({
   symbols: z.array(z.string()).min(1).max(30),
   from: z.string().optional(), to: z.string().optional(),

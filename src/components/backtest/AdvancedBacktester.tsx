@@ -1,5 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
+import DescribeBox from "@/components/ai/DescribeBox";
 import type { Cond } from "@/lib/engine/series";
 import { runBacktestAction, saveStrategy, type RunResponse } from "@/app/(app)/backtester/actions";
 import CondBuilder from "./CondBuilder";
@@ -38,6 +39,14 @@ export default function AdvancedBacktester({ symbols, signedIn, initial }: { sym
           </div>
         </div>
         <div className="card space-y-4 p-4 lg:col-span-2">
+          <DescribeBox placeholder="e.g. Buy when RSI is under 30 and price is above the 200-day average. Sell when RSI goes above 70, with a 5% stop loss." onApply={(s) => {
+            if (s.entry.length) setEntry(s.entry);
+            setExit(s.exit);
+            setEj(s.entryJoin);
+            setXj(s.exitJoin);
+            const v = (x: number | null | undefined) => (x == null ? "" : String(x));
+            setO((p) => ({ ...p, stopLossPct: v(s.stopLossPct), takeProfitPct: v(s.takeProfitPct), trailingStopPct: v(s.trailingStopPct), maxHoldDays: v(s.maxHoldDays) }));
+          }} />
           <div><div className="mb-2 text-sm font-semibold text-up">Entry conditions</div><CondBuilder conds={entry} onChange={setEntry} join={ej} onJoin={setEj} /></div>
           <div><div className="mb-2 text-sm font-semibold text-down">Exit conditions</div><CondBuilder conds={exit} onChange={setExit} join={xj} onJoin={setXj} /></div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">

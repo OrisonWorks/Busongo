@@ -5,6 +5,8 @@ import { Badge, Card, PageHeader, Stat } from "@/components/ui";
 import { dataStatus } from "@/lib/market";
 import { fmtDate } from "@/lib/format";
 import { addCorporateAction, importFundamentalsAction, importPricesAction, runIngest, setPlan } from "./actions";
+import FundamentalsExtractor from "./FundamentalsExtractor";
+import { aiConfigured } from "@/lib/ai";
 
 export const metadata = { title: "Admin" };
 export default async function Page() {
@@ -29,7 +31,7 @@ export default async function Page() {
         <Stat label="Recent revenue" value={`K${paid.toFixed(2)}`} sub="last 20 payments" />
       </div>
       <Card title="Ingestion" className="mt-4">
-        <div className="mb-3 flex gap-2">{(["luse", "boz", "crypto"] as const).map((j) => <form key={j} action={runIngest.bind(null, j)}><button className="btn btn-ghost">Run {j.toUpperCase()} now</button></form>)}</div>
+        <div className="mb-3 flex gap-2">{(["luse", "boz", "crypto", "brief", "sens-ai"] as const).map((j) => <form key={j} action={runIngest.bind(null, j)}><button className="btn btn-ghost">{j === "brief" ? "Generate daily brief" : j === "sens-ai" ? "Summarise SENS (AI)" : `Run ${j.toUpperCase()} now`}</button></form>)}</div>
         <table className="data"><thead><tr><th>Started</th><th>Source</th><th>Status</th><th>Message</th></tr></thead><tbody>{runs.map((r) => <tr key={r.id}><td>{r.startedAt.toISOString().slice(0, 16).replace("T", " ")}</td><td>{r.source}</td><td><Badge color={r.status === "ok" ? "green" : r.status === "error" ? "red" : "amber"}>{r.status}</Badge></td><td className="max-w-[480px] truncate text-xs text-muted">{r.message}</td></tr>)}</tbody></table>
       </Card>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -42,6 +44,9 @@ export default async function Page() {
           <ActionForm action={importFundamentalsAction} submit="Import fundamentals" className="space-y-2"><input type="file" name="file" accept=".csv,text/csv" className="input" /><textarea name="csv" rows={4} className="input font-mono text-xs" placeholder="symbol,fiscalyear,revenue,netincome,eps,dps" /></ActionForm>
         </Card>
       </div>
+      <Card title="Extract fundamentals from a report (AI)" className="mt-4">
+        <FundamentalsExtractor symbols={syms.map((s) => s.symbol)} configured={aiConfigured()} />
+      </Card>
       <Card title="Add corporate action" className="mt-4">
         <ActionForm action={addCorporateAction} submit="Add" className="grid gap-2 sm:grid-cols-7">
           <select name="symbol" className="input">{syms.map((s) => <option key={s.symbol}>{s.symbol}</option>)}</select>

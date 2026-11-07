@@ -1,5 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
+import DescribeBox from "@/components/ai/DescribeBox";
 import Link from "next/link";
 import type { Cond } from "@/lib/engine/series";
 import { PRESET_SCANS } from "@/lib/engine/scanner";
@@ -33,6 +34,7 @@ export default function Scanner({ sectors, signedIn, watchSymbols, initial }: { 
       </div>
       <div className="min-w-0 space-y-4">
         <div className="card space-y-3 p-4">
+          <DescribeBox mode="scan" placeholder="e.g. RSI below 35 and volume above its 20-day average" onApply={(s) => { setConds(s.entry.length ? s.entry : s.exit); setJoin(s.entry.length ? s.entryJoin : s.exitJoin); }} />
           <CondBuilder conds={conds} onChange={setConds} join={join} onJoin={setJoin} />
           <div className="flex flex-wrap items-end gap-2">
             <div><label className="label">Market</label><select className="input" value={asset} onChange={(e) => setAsset(e.target.value as "EQUITY")}><option value="EQUITY">LuSE</option><option value="CRYPTO">Crypto</option></select></div>
