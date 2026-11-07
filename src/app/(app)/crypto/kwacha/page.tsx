@@ -22,8 +22,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
   const offAt = (d: string) => { let v: number | null = null; for (const o of offH) { if (o.date <= d) v = o.value; else break; } return v; };
   const sellAt = new Map(sellH.map((s) => [s.date, s.value]));
   const hist = buyH.map((b) => { const o = offAt(b.date); const s = sellAt.get(b.date); const md = s ? (b.value + s) / 2 : b.value; return { date: b.date, premium: o ? +p2pPremium(md, o).toFixed(2) : null }; }).filter((x) => x.premium != null);
-  const yearAgo = offH.length ? offAt(new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10)) : null;
-  const fxHist = off && yearAgo ? (off / yearAgo - 1) * 100 : 0;
+  const first = offH[0], lastOff = offH[offH.length - 1];
+  const spanDays = first && lastOff ? (Date.parse(lastOff.date) - Date.parse(first.date)) / 86400000 : 0;
+  const fullYear = spanDays >= 360;
+  const base = fullYear ? offAt(new Date(Date.parse(lastOff.date) - 365 * 86400000).toISOString().slice(0, 10)) : first?.value ?? null;
+  const fxHist = off && base && spanDays >= 30 ? ((off / base) ** (fullYear ? 1 : 365 / spanDays) - 1) * 100 : 0;
+  const fxLabel = spanDays < 30 ? "Not enough BoZ exchange-rate history yet, so 0% is assumed." : `${fullYear ? "Last 12 months" : `Since ${fmtDate(first.date)}, annualised`}: ${pct(fxHist)} (${fxHist < 0 ? "kwacha strengthened" : "kwacha weakened"}).`;
   const fx = sp.fx != null && sp.fx !== "" && Number.isFinite(+sp.fx) ? Math.max(-90, Math.min(500, +sp.fx)) : fxHist;
   const infl = m.INFLATION?.value ?? 0;
   const tb = curve.find((c) => c.tenor === "364d")?.yield ?? null;
@@ -49,7 +53,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
         <form className="mb-3 flex flex-wrap items-end gap-2 text-sm">
           <div><label className="label" htmlFor="fx">Assumed USD/ZMW change over 12 months (%)</label><input id="fx" name="fx" type="number" step="0.1" defaultValue={fx.toFixed(1)} className="input w-40" /></div>
           <button className="btn btn-ghost">Recalculate</button>
-          <span className="text-xs text-muted">Last 12 months: {pct(fxHist)} ({fxHist < 0 ? "kwacha strengthened" : "kwacha weakened"}). Positive = kwacha weakens, which helps dollar assets.</span>
+          <span className="text-xs text-muted">{fxLabel} Positive = kwacha weakens, which helps dollar assets.</span>
         </form>
         {rows.length ? <div className="overflow-x-auto"><table className="data"><thead><tr><th>Option</th><th>Currency</th><th className="r">Yield</th><th className="r">Net yield</th><th className="r">Return in ZMW</th><th className="r">Real (after {fmt(infl, 1)}% inflation)</th><th className="r">TVL</th></tr></thead><tbody>
           {rows.map((r) => <tr key={r.name + r.sub}><td>{r.name}<div className="text-[11px] text-muted">{r.sub}</div></td><td>{r.ccy}</td><td className="r">{fmt(r.gross)}%</td><td className="r">{fmt(r.net)}%</td><td className={`r ${tone(r.zmw)}`}>{pct(r.zmw)}</td><td className={`r ${tone(realReturn(r.zmw, infl))}`}>{pct(realReturn(r.zmw, infl))}</td><td className="r">{r.tvl ? `$${fmt(r.tvl / 1e6, 0)}M` : "—"}</td></tr>)}
