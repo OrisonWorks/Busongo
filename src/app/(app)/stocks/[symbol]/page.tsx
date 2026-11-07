@@ -25,7 +25,7 @@ export default async function Page({ params }: { params: Promise<{ symbol: strin
     getBars(sec.symbol),
     getUser(),
     getAnnouncements(15, sec.symbol),
-    prisma.fundamental.findMany({ where: { securityId: sec.id }, orderBy: { fiscalYear: "desc" } }),
+    prisma.fundamental.findMany({ where: { securityId: sec.id, period: "FY" }, orderBy: { fiscalYear: "desc" } }),
     prisma.corporateAction.findMany({ where: { securityId: sec.id }, orderBy: { exDate: "desc" }, take: 10 }),
     getIndex("LASI"),
   ]);

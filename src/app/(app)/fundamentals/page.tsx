@@ -19,7 +19,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     </div>
   );
   const sp = await searchParams;
-  const [q, secs] = await Promise.all([getQuotes("EQUITY"), prisma.security.findMany({ where: { assetClass: "EQUITY" }, include: { fundamentals: { orderBy: { fiscalYear: "desc" }, take: 1 } } })]);
+  const [q, secs] = await Promise.all([getQuotes("EQUITY"), prisma.security.findMany({ where: { assetClass: "EQUITY" }, include: { fundamentals: { where: { period: "FY" }, orderBy: { fiscalYear: "desc" }, take: 1 } } })]);
   const px = new Map(q.map((x) => [x.symbol, x.close]));
   let rows = secs.map((s) => ({ s, f: s.fundamentals[0], v: valuation(s.fundamentals[0], px.get(s.symbol) ?? null, s.sharesOutstanding) }));
   const num = (k: string) => (sp[k] ? +sp[k]! : null);

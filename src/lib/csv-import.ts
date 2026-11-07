@@ -33,7 +33,9 @@ export async function importPrices(text: string) {
   return { ok, total: rows.length, errors };
 }
 
-/** Columns: symbol, fiscalyear, and any of revenue, grossprofit, operatingprofit, netincome, totalassets, totalliabilities, totalequity, totaldebt, cash, operatingcashflow, capex, eps, dps, sharesoutstanding, sourceurl. */
+const normPeriod = (s?: string) => { const v = (s || "").toUpperCase(); const q = v.match(/\bQ([1-4])\b/); return q ? `Q${q[1]}` : /\bH1\b|HALF|INTERIM|SIX MONTHS|6 MONTHS/.test(v) ? "H1" : /\bH2\b/.test(v) ? "H2" : "FY"; };
+
+/** Columns: symbol, fiscalyear, optional period (FY, H1, H2, Q1–Q4; default FY) and currency (default ZMW), and any of revenue, grossprofit, operatingprofit, netincome, totalassets, totalliabilities, totalequity, totaldebt, cash, operatingcashflow, capex, eps, dps, sharesoutstanding, sourceurl. */
 export async function importFundamentals(text: string) {
   const rows = parseCsv(text);
   const secs = new Map((await prisma.security.findMany()).map((s) => [s.symbol, s.id]));
@@ -42,9 +44,11 @@ export async function importFundamentals(text: string) {
   for (const [i, r] of rows.entries()) {
     const sid = secs.get((r.symbol || "").toUpperCase()), fy = num(r.fiscalyear);
     if (!sid || !fy) { if (errors.length < 20) errors.push(`Row ${i + 2}: ${!sid ? `unknown symbol "${r.symbol}"` : "missing fiscalyear"}`); continue; }
+    const period = normPeriod(r.period);
     const data: Record<string, number | string | null> = { source: "import", sourceUrl: r.sourceurl || null };
+    if (/^[A-Za-z]{3}$/.test(r.currency || "")) data.currency = r.currency.toUpperCase();
     for (const [k, f] of Object.entries(F)) if (r[k] != null && r[k] !== "") data[f] = num(r[k]);
-    await prisma.fundamental.upsert({ where: { securityId_fiscalYear_period: { securityId: sid, fiscalYear: fy, period: "FY" } }, update: data, create: { securityId: sid, fiscalYear: fy, ...data } });
+    await prisma.fundamental.upsert({ where: { securityId_fiscalYear_period: { securityId: sid, fiscalYear: fy, period } }, update: data, create: { securityId: sid, fiscalYear: fy, period, ...data } });
     ok++;
   }
   return { ok, total: rows.length, errors };

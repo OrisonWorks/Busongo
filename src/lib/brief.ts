@@ -12,7 +12,7 @@ export async function briefFacts() {
   const tbills = lastAuction ? await prisma.tbillAuction.findMany({ where: { auctionDate: lastAuction.auctionDate }, orderBy: { tenorDays: "asc" } }) : [];
   const moved = eq.filter((q) => q.changePct != null && q.changePct !== 0).sort((a, b) => (b.changePct as number) - (a.changePct as number));
   return {
-    date: eq.find((q) => q.date)?.date ?? new Date().toISOString().slice(0, 10),
+    date: eq.reduce<string | null>((d, q) => (q.date && (!d || q.date > d) ? q.date : d), null) ?? new Date().toISOString().slice(0, 10),
     lasi: lasi.at(-1) ?? null,
     breadth: breadth(eq),
     turnover: eq.reduce((s, q) => s + (q.value ?? 0), 0),
