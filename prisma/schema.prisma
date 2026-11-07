@@ -402,3 +402,19 @@ model BlogPost {
   published   Boolean  @default(true)
   publishedAt DateTime @default(now())
 }
+
+model StableYield {
+  id         String   @id @default(cuid())
+  date       DateTime @db.Date
+  pool       String
+  project    String
+  chain      String
+  symbol     String
+  apy        Float
+  apyBase    Float?
+  apyReward  Float?
+  tvlUsd     Float
+
+  @@unique([date, pool])
+  @@index([date])
+}

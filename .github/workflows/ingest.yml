@@ -16,4 +16,4 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx prisma migrate deploy
-      - run: npm run ingest -- luse boz crypto brief sens-ai
+      - run: npm run ingest -- luse boz crypto p2p defi brief sens-ai

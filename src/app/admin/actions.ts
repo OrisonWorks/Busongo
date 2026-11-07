@@ -9,6 +9,8 @@ import { ingestCrypto } from "@/lib/ingest/crypto";
 import { ingestLuse } from "@/lib/ingest/luse";
 import { evaluateAlerts } from "@/lib/alerts";
 import { generateBrief } from "@/lib/brief";
+import { ingestP2P } from "@/lib/ingest/p2p";
+import { ingestStableYields } from "@/lib/ingest/defi";
 import { summarizeAnnouncements } from "@/lib/ai/sens";
 import { extractFundamentals, toCsv } from "@/lib/ai/fundamentals";
 import { fetchPdf, pdfTextFromBuffer } from "@/lib/ai/pdf";
@@ -44,11 +46,11 @@ export async function addCorporateAction(_: FormState, fd: FormData): Promise<Fo
   revalidatePath("/calendar");
   return { ok: "Corporate action added." };
 }
-export async function runIngest(job: "luse" | "boz" | "crypto" | "brief" | "sens-ai") {
+export async function runIngest(job: "luse" | "boz" | "crypto" | "p2p" | "defi" | "brief" | "sens-ai") {
   await requireAdmin();
   const run = await prisma.ingestRun.create({ data: { source: job, status: "running" } });
   try {
-    const r = await (job === "luse" ? ingestLuse() : job === "boz" ? ingestBoz() : job === "brief" ? generateBrief() : job === "sens-ai" ? summarizeAnnouncements(10) : ingestCrypto(10));
+    const r = await (job === "luse" ? ingestLuse() : job === "boz" ? ingestBoz() : job === "p2p" ? ingestP2P() : job === "defi" ? ingestStableYields() : job === "brief" ? generateBrief() : job === "sens-ai" ? summarizeAnnouncements(10) : ingestCrypto(10));
     await evaluateAlerts();
     await prisma.ingestRun.update({ where: { id: run.id }, data: { status: "ok", message: JSON.stringify(r), endedAt: new Date() } });
   } catch (e) {

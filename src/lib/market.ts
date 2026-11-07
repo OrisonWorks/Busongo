@@ -114,7 +114,7 @@ export const getMacro = cache(async (key: string) => {
 });
 
 export const latestMacro = cache(async () => {
-  const keys = ["MPR", "INFLATION", "INFLATION_FOOD", "INFLATION_NONFOOD", "INTERBANK", "OLF", "USDZMW"];
+  const keys = ["MPR", "INFLATION", "INFLATION_FOOD", "INFLATION_NONFOOD", "INTERBANK", "OLF", "USDZMW", "P2P_USDT_ZMW_BUY", "P2P_USDT_ZMW_SELL"];
   const out: Record<string, { date: string; value: number } | undefined> = {};
   for (const k of keys) {
     const r = await prisma.macroRate.findFirst({ where: { key: k }, orderBy: { date: "desc" } });
