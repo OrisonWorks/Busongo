@@ -32,7 +32,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-line px-4 py-4 text-center text-xs text-muted">
-        © {new Date().getFullYear()} {brand.name}. Market data from the Lusaka Securities Exchange and Bank of Zambia public releases; may be delayed. For research and education only: Busongo does not trade, take payments or give investment advice.
+        © {new Date().getFullYear()} {brand.name}. Market data from the Lusaka Securities Exchange and Bank of Zambia public releases; may be delayed. For research and education only: {brand.name} does not trade{PAYMENTS_ENABLED ? "" : ", take payments"} or give investment advice.
       </div>
     </footer>
   );
