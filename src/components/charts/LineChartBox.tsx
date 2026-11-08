@@ -4,7 +4,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, Line, LineChart,
 export type LineDef = { key: string; name: string; color: string; dashed?: boolean };
 const tip = { contentStyle: { background: "#0d1424", border: "1px solid #1e2a44", borderRadius: 8, fontSize: 12 }, labelStyle: { color: "#e6ebf5" } };
 
-export function LineChartBox({ data, x, lines, height = 300, unit = "", area = false, numericX = false }: { data: Record<string, unknown>[]; x: string; lines: LineDef[]; height?: number; unit?: string; area?: boolean; numericX?: boolean }) {
+export function LineChartBox({ data, x, lines, height = 300, unit = "", area = false, numericX = false }: { data: Record<string, unknown>[]; x: string; lines: LineDef[]; height?: number | `${number}%`; unit?: string; area?: boolean; numericX?: boolean }) {
   const C = area ? AreaChart : LineChart;
   return (
     <ResponsiveContainer width="100%" height={height}>

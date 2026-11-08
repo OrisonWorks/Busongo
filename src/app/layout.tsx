@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import HideOnEmbed from "@/components/HideOnEmbed";
 import { brand } from "@/config/brand";
 import { getUser } from "@/lib/auth";
 
@@ -21,9 +22,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="en">
       <body className={`${sans.variable} ${mono.variable} antialiased`}>
-        <Navbar user={user ? { name: user.name, email: user.email, plan: user.plan, role: user.role } : null} />
+        <HideOnEmbed><Navbar user={user ? { name: user.name, email: user.email, plan: user.plan, role: user.role } : null} /></HideOnEmbed>
         <main>{children}</main>
-        <Footer />
+        <HideOnEmbed><Footer /></HideOnEmbed>
       </body>
     </html>
   );
