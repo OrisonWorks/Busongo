@@ -25,7 +25,7 @@ export async function createProof(o: { userId?: string | null; kind: string; ref
   if (!p.txHash && anchoringEnabled()) {
     try {
       const txHash = await anchorHash(hash, o.kind);
-      p = await prisma.proof.update({ where: { id: p.id }, data: { txHash, network: NEAR.network, anchoredAt: new Date() } });
+      p = await prisma.proof.update({ where: { id: p.id }, data: { txHash, network: NEAR.network, signer: NEAR.signer, anchoredAt: new Date() } });
     } catch (e) {
       console.error("NEAR anchoring failed", e);
     }
