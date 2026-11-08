@@ -12,4 +12,5 @@ export async function readChallenge(token?: string) {
   if (!token) return null;
   try { return (await jwtVerify(token, key(), { audience: "near-signin" })).payload as unknown as NearChallenge; } catch { return null; }
 }
-export const safeNext = (n: string | null | undefined, d = "/dashboard") => (n && n.startsWith("/") && !n.startsWith("//") ? n : d);
+/** Same-origin path only: rejects `//host`, `/\host` and control characters/whitespace, which browsers strip or treat as `/`. */
+export const safeNext = (n: string | null | undefined, d = "/dashboard") => (n && /^\/(?![/\\])[^\\\s\u0000-\u001f]*$/.test(n) ? n : d);
