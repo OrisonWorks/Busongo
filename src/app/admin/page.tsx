@@ -20,7 +20,9 @@ export default async function Page() {
     dataStatus(),
     prisma.security.findMany({ where: { assetClass: "EQUITY" }, orderBy: { symbol: "asc" }, select: { symbol: true } }),
   ]);
-  const paid = pays.filter((p) => p.status === "success").reduce((a, p) => a + p.amount, 0);
+  const ok = pays.filter((p) => p.status === "success");
+  const paid = ok.filter((p) => p.currency === "ZMW").reduce((a, p) => a + p.amount, 0);
+  const paidStable = ok.filter((p) => p.currency !== "ZMW").reduce((a, p) => a + p.amount, 0);
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <PageHeader title="Admin" subtitle="Data ingestion, imports, users and payments." />
@@ -28,10 +30,10 @@ export default async function Page() {
         <Stat label="Users" value={nUsers} />
         <Stat label="LuSE sessions stored" value={ds.equitySessions} sub={`${fmtDate(ds.equityFirst)} → ${fmtDate(ds.equityLast)}`} />
         <Stat label="Latest crypto bar" value={fmtDate(ds.cryptoLast)} />
-        <Stat label="Recent revenue" value={`K${paid.toFixed(2)}`} sub="last 20 payments" />
+        <Stat label="Recent revenue" value={`K${paid.toFixed(2)}`} sub={`last 20 payments${paidStable ? ` · plus $${paidStable.toFixed(2)} in stablecoins` : ""}`} />
       </div>
       <Card title="Ingestion" className="mt-4">
-        <div className="mb-3 flex gap-2">{(["luse", "boz", "crypto", "brief", "sens-ai"] as const).map((j) => <form key={j} action={runIngest.bind(null, j)}><button className="btn btn-ghost">{j === "brief" ? "Generate daily brief" : j === "sens-ai" ? "Summarise SENS (AI)" : `Run ${j.toUpperCase()} now`}</button></form>)}</div>
+        <div className="mb-3 flex gap-2">{(["luse", "boz", "crypto", "p2p", "defi", "brief", "sens-ai", "proofs"] as const).map((j) => <form key={j} action={runIngest.bind(null, j)}><button className="btn btn-ghost">{j === "brief" ? "Generate daily brief" : j === "sens-ai" ? "Summarise SENS (AI)" : j === "proofs" ? "Anchor market data on NEAR" : `Run ${j.toUpperCase()} now`}</button></form>)}</div>
         <table className="data"><thead><tr><th>Started</th><th>Source</th><th>Status</th><th>Message</th></tr></thead><tbody>{runs.map((r) => <tr key={r.id}><td>{r.startedAt.toISOString().slice(0, 16).replace("T", " ")}</td><td>{r.source}</td><td><Badge color={r.status === "ok" ? "green" : r.status === "error" ? "red" : "amber"}>{r.status}</Badge></td><td className="max-w-[480px] truncate text-xs text-muted">{r.message}</td></tr>)}</tbody></table>
       </Card>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">

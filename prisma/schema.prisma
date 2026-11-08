@@ -225,6 +225,7 @@ model User {
   name          String?
   phone         String?
   passwordHash  String
+  nearAccountId String?   @unique
   role          Role      @default(USER)
   plan          Plan      @default(FREE)
   planExpiresAt DateTime?
@@ -242,6 +243,7 @@ model User {
   journal       JournalEntry[]
   watchlist     WatchItem[]
   paperTrades   PaperTrade[]
+  proofs        Proof[]
   chats         ChatMessage[]
 }
 
@@ -401,4 +403,37 @@ model BlogPost {
   author      String   @default("Research Desk")
   published   Boolean  @default(true)
   publishedAt DateTime @default(now())
+}
+
+model StableYield {
+  id         String   @id @default(cuid())
+  date       DateTime @db.Date
+  pool       String
+  project    String
+  chain      String
+  symbol     String
+  apy        Float
+  apyBase    Float?
+  apyReward  Float?
+  tvlUsd     Float
+
+  @@unique([date, pool])
+  @@index([date])
+}
+
+model Proof {
+  id         String    @id @default(cuid())
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  kind       String
+  refId      String?
+  hash       String    @unique
+  payload    Json
+  network    String?
+  signer     String?
+  txHash     String?
+  anchoredAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([kind, refId])
 }

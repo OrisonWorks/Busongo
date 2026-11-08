@@ -19,6 +19,7 @@ export const PRODUCTS: NavGroup[] = [
     { href: "/fixed-income", label: "Fixed Income", desc: "T-bills, GRZ bonds and the yield curve" },
     { href: "/macro", label: "Macro Dashboard", desc: "Policy rate, inflation, interbank and kwacha" },
     { href: "/crypto", label: "Crypto", desc: "Charts and backtests for major cryptocurrencies" },
+    { href: "/crypto/kwacha", label: "Kwacha & Stablecoins", desc: "Crypto in ZMW, USDT/ZMW P2P premium, stablecoin vs T-bill yields" },
   ] },
   { label: "Tools", items: [
     { href: "/tools/gann", label: "Gann Tools", desc: "Square of 9, Gann angles and time cycles" },
@@ -88,5 +89,5 @@ export const SIDEBAR: NavGroup[] = [
     { href: "/calendar", label: "Calendars" },
     { href: "/alerts", label: "Alerts" },
   ] },
-  { label: "Crypto", items: [{ href: "/crypto", label: "Crypto Markets" }] },
+  { label: "Crypto", items: [{ href: "/crypto", label: "Crypto Markets" }, { href: "/crypto/kwacha", label: "Kwacha & Stablecoins" }] },
 ];

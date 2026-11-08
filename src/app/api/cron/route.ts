@@ -4,10 +4,13 @@ import { ingestBoz } from "@/lib/ingest/boz";
 import { ingestCrypto } from "@/lib/ingest/crypto";
 import { evaluateAlerts } from "@/lib/alerts";
 import { generateBrief } from "@/lib/brief";
+import { ingestP2P } from "@/lib/ingest/p2p";
+import { ingestStableYields } from "@/lib/ingest/defi";
+import { anchorMarketData } from "@/lib/web3/proofs";
 
 export const maxDuration = 300;
 // LuSE needs a headless browser, so it runs from the GitHub Actions workflow (scripts/ingest.ts) instead.
-const JOBS = { boz: ingestBoz, crypto: () => ingestCrypto(10), brief: generateBrief } as const;
+const JOBS = { boz: ingestBoz, crypto: () => ingestCrypto(10), p2p: ingestP2P, defi: () => ingestStableYields(), brief: generateBrief, proofs: anchorMarketData } as const;
 
 export async function GET(req: Request) {
   if (!process.env.CRON_SECRET || req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) return NextResponse.json({ error: "unauthorized" }, { status: 401 });

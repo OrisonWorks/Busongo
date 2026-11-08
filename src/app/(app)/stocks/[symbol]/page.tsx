@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { getAnnouncements, getBars, getIndex, getSecurity } from "@/lib/market";
+import { getAnnouncements, getBars, getIndex, getSecurity, latestMacro } from "@/lib/market";
 import { getUser } from "@/lib/auth";
 import { Badge, Card, Chg, PageHeader, Stat } from "@/components/ui";
 import PriceChart from "@/components/charts/PriceChart";
@@ -25,10 +25,11 @@ export default async function Page({ params }: { params: Promise<{ symbol: strin
     getBars(sec.symbol),
     getUser(),
     getAnnouncements(15, sec.symbol),
-    prisma.fundamental.findMany({ where: { securityId: sec.id }, orderBy: { fiscalYear: "desc" } }),
+    prisma.fundamental.findMany({ where: { securityId: sec.id, period: "FY" }, orderBy: { fiscalYear: "desc" } }),
     prisma.corporateAction.findMany({ where: { securityId: sec.id }, orderBy: { exDate: "desc" }, take: 10 }),
     getIndex("LASI"),
   ]);
+  const fx = sec.assetClass === "CRYPTO" ? await latestMacro() : null;
   const watching = user ? !!(await prisma.watchItem.findUnique({ where: { userId_symbol: { userId: user.id, symbol: sec.symbol } } })) : false;
   const crypto = sec.assetClass === "CRYPTO";
   const last = bars.at(-1), prev = bars.at(-2);
@@ -38,7 +39,8 @@ export default async function Page({ params }: { params: Promise<{ symbol: strin
   const yr = bars.slice(-252);
   const hi52 = yr.length ? Math.max(...yr.map((b) => b.close)) : null, lo52 = yr.length ? Math.min(...yr.map((b) => b.close)) : null;
   const ret = (n: number) => (bars.length > n ? (last!.close / bars[bars.length - 1 - n].close - 1) * 100 : null);
-  const v = valuation(funds[0], last?.close ?? null, sec.sharesOutstanding);
+  const usdZmw = (fx ?? (funds[0] && funds[0].currency !== sec.currency ? await latestMacro() : null))?.USDZMW?.value ?? null;
+  const v = valuation(funds[0], last?.close ?? null, sec.sharesOutstanding, sec.currency, usdZmw);
   const pv = last ? pivots(last.high, last.low, last.close) : null;
   const sma = (n: number) => bars.map((b, k) => ({ date: b.date, value: s.get({ ind: "sma", period: n })[k] }));
   const raw = last ? await prisma.priceBar.findFirst({ where: { securityId: sec.id }, orderBy: { date: "desc" } }) : null;
@@ -63,7 +65,8 @@ export default async function Page({ params }: { params: Promise<{ symbol: strin
         <Stat label="Value traded" value={ccy(sec.currency, last?.value, 0)} />
         <Stat label="52-week range" value={`${fmt(lo52)} – ${fmt(hi52)}`} sub={`${bars.length} sessions stored`} />
         <Stat label="Best bid / ask" value={`${raw?.bidPrice ?? "—"} / ${raw?.askPrice ?? "—"}`} sub={raw?.bidQty || raw?.askQty ? `${compact(raw?.bidQty)} / ${compact(raw?.askQty)}` : undefined} />
-        <Stat label="P/E · Div. yield" value={`${fmt(v.pe, 1)} · ${fmt(v.divYield, 1)}%`} sub={funds[0] ? `FY${funds[0].fiscalYear}` : "No filings loaded"} />
+        {fx ? <Stat label="Price in kwacha" value={fx.USDZMW && last ? `K${fmt(last.close * fx.USDZMW.value)}` : "—"} sub={fx.P2P_USDT_ZMW_BUY && last ? `P2P: K${fmt(last.close * fx.P2P_USDT_ZMW_BUY.value)} · BoZ K${fmt(fx.USDZMW?.value, 2)}/$` : `BoZ K${fmt(fx.USDZMW?.value, 2)}/$`} /> : null}
+        {!fx && <Stat label="P/E · Div. yield" value={`${fmt(v.pe, 1)} · ${fmt(v.divYield, 1)}%`} sub={funds[0] ? `FY${funds[0].fiscalYear}` : "No filings loaded"} />}
       </div>
       <Card className="mt-4" title="Price chart" action={<span className="text-xs text-muted">{crypto ? "Daily OHLC" : "Close-to-close candles"} · SMA 20 / 50</span>}>
         {bars.length > 1 ? <PriceChart bars={bars} overlays={[{ name: "SMA20", color: "#38bdf8", data: sma(20) }, { name: "SMA50", color: "#f59e0b", data: sma(50) }]} /> : <div className="py-20 text-center text-sm text-muted">Only {bars.length} session stored so far. The chart fills in as daily data accumulates.</div>}

@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { getQuotes } from "@/lib/market";
+import { getQuotes, latestMacro } from "@/lib/market";
 import { valuation } from "@/lib/fundamentals";
 import { Card, Empty, PageHeader, Stat } from "@/components/ui";
 import { BarChartBox } from "@/components/charts/LineChartBox";
 import { compact, fmt } from "@/lib/format";
 
 export default async function Page({ params }: { params: Promise<{ symbol: string }> }) {
-  const s = await prisma.security.findUnique({ where: { symbol: (await params).symbol.toUpperCase() }, include: { fundamentals: { orderBy: { fiscalYear: "asc" } } } });
+  const s = await prisma.security.findUnique({ where: { symbol: (await params).symbol.toUpperCase() }, include: { fundamentals: { where: { period: "FY" }, orderBy: { fiscalYear: "asc" } } } });
   if (!s) notFound();
   const px = (await getQuotes("EQUITY")).find((q) => q.symbol === s.symbol)?.close ?? null;
   const f = s.fundamentals;
-  const v = valuation(f.at(-1), px, s.sharesOutstanding);
+  const v = valuation(f.at(-1), px, s.sharesOutstanding, s.currency, (await latestMacro()).USDZMW?.value);
   const lines: [string, keyof (typeof f)[0]][] = [["Revenue", "revenue"], ["Gross profit", "grossProfit"], ["Operating profit", "operatingProfit"], ["Net income", "netIncome"], ["Total assets", "totalAssets"], ["Total liabilities", "totalLiabilities"], ["Total equity", "totalEquity"], ["Total debt", "totalDebt"], ["Cash", "cash"], ["Operating cash flow", "operatingCashFlow"], ["Capex", "capex"], ["EPS", "eps"], ["DPS", "dps"], ["Shares outstanding", "sharesOutstanding"]];
   return (
     <div>

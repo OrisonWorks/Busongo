@@ -11,7 +11,7 @@ export async function marketContext() {
   return [
     `Latest LuSE session: ${q[0]?.date ?? "n/a"}. Advances ${b.advances}, declines ${b.declines}, unchanged ${b.unchanged}.`,
     `Quotes (symbol close %chg value): ${q.map((x) => `${x.symbol} ${x.close} ${x.changePct?.toFixed(2) ?? "-"}% K${Math.round(x.value ?? 0)}`).join("; ")}`,
-    `BoZ: MPR ${m.MPR?.value}%, inflation ${m.INFLATION?.value}%, interbank ${m.INTERBANK?.value}%, USD/ZMW ${m.USDZMW?.value}.`,
+    `BoZ: MPR ${m.MPR?.value}%, inflation ${m.INFLATION?.value}%, interbank ${m.INTERBANK?.value}%, USD/ZMW ${m.USDZMW?.value}. Binance P2P USDT/ZMW: buy ${m.P2P_USDT_ZMW_BUY?.value ?? "n/a"}, sell ${m.P2P_USDT_ZMW_SELL?.value ?? "n/a"}.`,
     `GRZ yield curve: ${c.map((x) => `${x.tenor} ${x.yield}%`).join(", ")}.`,
     `Recent SENS: ${s.map((x) => x.title).join(" | ")}`,
     `LuSE fees: 1.375% per side (SEC 0.125%, LuSE 0.25%, broker 1%).`,

@@ -12,7 +12,7 @@ export async function briefFacts() {
   const tbills = lastAuction ? await prisma.tbillAuction.findMany({ where: { auctionDate: lastAuction.auctionDate }, orderBy: { tenorDays: "asc" } }) : [];
   const moved = eq.filter((q) => q.changePct != null && q.changePct !== 0).sort((a, b) => (b.changePct as number) - (a.changePct as number));
   return {
-    date: eq.find((q) => q.date)?.date ?? new Date().toISOString().slice(0, 10),
+    date: eq.reduce<string | null>((d, q) => (q.date && (!d || q.date > d) ? q.date : d), null) ?? new Date().toISOString().slice(0, 10),
     lasi: lasi.at(-1) ?? null,
     breadth: breadth(eq),
     turnover: eq.reduce((s, q) => s + (q.value ?? 0), 0),
@@ -36,7 +36,8 @@ export function templateBrief(x: BriefFacts) {
   ].filter(Boolean).join(" ");
   const m = x.macro;
   const p3 = `${x.tbills.length ? `At the ${x.tbillDate} T-bill auction, yields were ${x.tbills.map((t) => `${t.tenorDays}-day ${f(t.yield)}%`).join(", ")}. ` : ""}The BoZ policy rate stands at ${f(m.MPR?.value)}%, annual inflation at ${f(m.INFLATION?.value, 1)}% and the kwacha at K${f(m.USDZMW?.value, 4)} per US dollar.`;
-  const p4 = x.crypto.length ? `In crypto, ${x.crypto.map((q) => `${q.symbol} ${sp(q.changePct)} at $${f(q.close)}`).join(", ")}.` : "";
+  const p2p = m.P2P_USDT_ZMW_BUY && m.P2P_USDT_ZMW_SELL && m.USDZMW ? (m.P2P_USDT_ZMW_BUY.value + m.P2P_USDT_ZMW_SELL.value) / 2 : null;
+  const p4 = x.crypto.length ? `In crypto, ${x.crypto.map((q) => `${q.symbol} ${sp(q.changePct)} at $${f(q.close)}`).join(", ")}.${p2p && m.USDZMW ? ` On Binance P2P, USDT changed hands at about K${f(p2p)}, ${sp((p2p / m.USDZMW.value - 1) * 100)} versus the official rate.` : ""}` : "";
   return [p1, p2, p3, p4].filter(Boolean).join("\n\n");
 }
 
