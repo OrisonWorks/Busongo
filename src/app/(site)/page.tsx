@@ -131,6 +131,7 @@ export default async function Home() {
           <div>
             <h2 className="text-2xl font-bold">Free for everyone</h2>
             <p className="mt-1 text-muted">Every scanner, backtester, fixed-income tool and AI feature, at no cost. No card, no subscription.</p>
+            <p className="mt-2 text-sm text-muted">For research and education only. Busongo doesn&apos;t trade, take payments or give investment advice.</p>
           </div>
           <Link href="/register" className="btn btn-primary px-6 py-3">Create free account</Link>
         </div>
