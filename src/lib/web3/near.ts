@@ -36,8 +36,8 @@ async function rpc<T>(method: string, params: unknown): Promise<T> {
   return j.result as T;
 }
 
-export async function view<T>(contract: string, method: string, args: object = {}): Promise<T> {
-  const r = await rpc<{ result: number[] }>("query", { request_type: "call_function", finality: "final", account_id: contract, method_name: method, args_base64: Buffer.from(JSON.stringify(args)).toString("base64") });
+export async function view<T>(contract: string, method: string, args: object = {}, finality: "final" | "optimistic" = "final"): Promise<T> {
+  const r = await rpc<{ result: number[] }>("query", { request_type: "call_function", finality, account_id: contract, method_name: method, args_base64: Buffer.from(JSON.stringify(args)).toString("base64") });
   return JSON.parse(Buffer.from(r.result).toString());
 }
 
@@ -99,6 +99,6 @@ export async function anchorHash(hash: string, kind: string) {
 
 /** Read back what NEAR Social holds for `hash` under the Busongo account (independent check). */
 export async function readAnchor(hash: string) {
-  const r = await view<Record<string, { busongo?: { proofs?: Record<string, string> } }>>(NEAR.social, "get", { keys: [`${NEAR.signer}/busongo/proofs/${hash}`] });
+  const r = await view<Record<string, { busongo?: { proofs?: Record<string, string> } }>>(NEAR.social, "get", { keys: [`${NEAR.signer}/busongo/proofs/${hash}`] }, "optimistic");
   return r[NEAR.signer]?.busongo?.proofs?.[hash] ?? null;
 }
