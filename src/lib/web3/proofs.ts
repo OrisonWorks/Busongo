@@ -34,6 +34,20 @@ export async function createProof(o: { userId?: string | null; kind: string; ref
   return p;
 }
 
+/** Current vote totals for every roadmap item, in a stable order so identical totals hash identically. */
+export async function roadmapTallyPayload() {
+  const items = await prisma.roadmapItem.findMany({ orderBy: { slug: "asc" }, select: { slug: true, title: true, status: true, _count: { select: { votes: true } } } });
+  return { v: 1, app: "busongo", kind: "roadmap-tally", date: new Date().toISOString().slice(0, 10), items: items.map((i) => ({ slug: i.slug, title: i.title, status: i.status, votes: i._count.votes })) };
+}
+
+export async function anchorRoadmapTally() {
+  if (!WEB3_ENABLED) return { skipped: "web3 disabled" };
+  const payload = await roadmapTallyPayload();
+  if (!payload.items.length) return { skipped: "no roadmap items" };
+  const p = await createProof({ kind: "roadmap-tally", refId: payload.date, payload });
+  return { date: payload.date, hash: p.hash, txHash: p.txHash };
+}
+
 export async function anchorMarketData() {
   if (!WEB3_ENABLED) return { skipped: "web3 disabled" };
   const payload = await marketDataPayload();

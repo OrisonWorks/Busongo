@@ -50,6 +50,7 @@ export const RESOURCES: NavItem[] = [
   { href: "/blog", label: "Blog", desc: "Guides and market research" },
   { href: "/videos", label: "Videos", desc: "Walkthroughs and tutorials" },
   { href: "/reference", label: "Reference", desc: "Indicator glossary, fees and market hours" },
+  { href: "/roadmap", label: "Roadmap", desc: "Vote on what we build next" },
   { href: "/about", label: "About us" },
   { href: "/contact", label: "Contact" },
 ];

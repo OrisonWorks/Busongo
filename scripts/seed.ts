@@ -2,6 +2,7 @@ import { prisma } from "../src/lib/db";
 import { LUSE_SECURITIES } from "../src/lib/data/securities";
 import { zambianHolidays } from "../src/lib/data/holidays";
 import { BLOG_POSTS } from "../src/lib/data/blog";
+import { ROADMAP_ITEMS } from "../src/lib/data/roadmap";
 
 (async () => {
   for (const s of LUSE_SECURITIES) {
@@ -15,6 +16,7 @@ import { BLOG_POSTS } from "../src/lib/data/blog";
   for (const yr of [y - 3, y - 2, y - 1, y, y + 1])
     for (const h of zambianHolidays(yr)) await prisma.tradingHoliday.upsert({ where: { date: h.date }, update: { name: h.name }, create: h });
   for (const p of BLOG_POSTS) await prisma.blogPost.upsert({ where: { slug: p.slug }, update: p, create: p });
+  for (const r of ROADMAP_ITEMS) await prisma.roadmapItem.upsert({ where: { slug: r.slug }, update: {}, create: r });
   console.log("seeded", LUSE_SECURITIES.length, "securities,", BLOG_POSTS.length, "posts");
   await prisma.$disconnect();
 })();
