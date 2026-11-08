@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { getUser, requireUser } from "@/lib/auth";
 import { getBars, getSecurity } from "@/lib/market";
 import { runBacktest, type BacktestConfig, type BacktestResult } from "@/lib/engine/backtest";
-import { historyStart, PLANS } from "@/config/plans";
+import { historyStart, PLANS, effectivePlan } from "@/config/plans";
 import { consume } from "@/lib/usage";
 import { CRYPTO_FEE_RATE, LUSE_FEE_RATE } from "@/config/fees";
 import type { Candle } from "@/lib/engine/series";
@@ -28,7 +28,7 @@ export async function runBacktestAction(kind: "basic" | "advanced", raw: unknown
   const p = cfgSchema.safeParse(raw);
   if (!p.success) return { error: p.error.issues[0].message };
   const user = await getUser();
-  const plan = user?.effectivePlan ?? "FREE";
+  const plan = user?.effectivePlan ?? effectivePlan(null);
   if (kind === "advanced") {
     if (!user) return { error: "Sign in to use the advanced backtester." };
     if (p.data.symbols.length > 1 && plan === "FREE") return { error: "Multi-stock portfolio backtests need the Advanced or Pro plan." };

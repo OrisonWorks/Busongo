@@ -1,5 +1,5 @@
 import { getUser } from "@/lib/auth";
-import { planAtLeast } from "@/config/plans";
+import { planAtLeast, effectivePlan } from "@/config/plans";
 import PlanLock from "@/components/PlanLock";
 import { getBars } from "@/lib/market";
 import { symbolOptions } from "@/lib/symbols";
@@ -13,7 +13,7 @@ import { fmt, fmtDate } from "@/lib/format";
 export const metadata = { title: "Smart Money Concepts" };
 export default async function Page({ searchParams }: { searchParams: Promise<{ symbol?: string }> }) {
   const viewer = await getUser();
-  if (!planAtLeast(viewer?.effectivePlan ?? "FREE", "ADVANCED")) return (
+  if (!planAtLeast(viewer?.effectivePlan ?? effectivePlan(null), "ADVANCED")) return (
     <div>
       <PageHeader title="Smart Money Concepts" subtitle="Swing structure (HH/HL/LH/LL), break of structure (BOS), change of character (CHoCH), order blocks and unfilled fair-value gaps." />
       <ToolTabs active="/tools/smc" />
