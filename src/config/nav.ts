@@ -40,7 +40,7 @@ export const PRODUCTS: NavGroup[] = [
 
 export const SOLUTIONS: NavItem[] = [
   { href: "/solutions#investors", label: "Long-term investors", desc: "Dividends, valuation and fundamentals" },
-  { href: "/solutions#traders", label: "Active traders", desc: "Scanners, signals and backtests after fees" },
+  { href: "/solutions#technical", label: "Technical analysts", desc: "Scanners, rule-based research and backtests after fees" },
   { href: "/solutions#fixed-income", label: "Fixed-income investors", desc: "T-bill and bond auction analytics" },
   { href: "/solutions#institutions", label: "Pension funds & asset managers", desc: "Data exports and portfolio research" },
   { href: "/solutions#students", label: "Students & educators", desc: "Learn markets with real Zambian data" },
