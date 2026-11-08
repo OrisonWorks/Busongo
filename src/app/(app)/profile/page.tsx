@@ -36,13 +36,13 @@ export default async function Page() {
         </Card>
       </div>
       <Card title="NEAR wallet" className="mt-4">
-        {u.nearAccountId ? <p className="text-sm">Linked to <a className="text-brand" href={accountUrl(u.nearAccountId)} target="_blank" rel="noreferrer">{u.nearAccountId}</a> ({NEAR.network}). You can sign in with this wallet.</p>
+        {u.nearAccountId ? <p className="break-all text-sm">Linked to <a className="text-brand" href={accountUrl(u.nearAccountId)} target="_blank" rel="noreferrer">{u.nearAccountId}</a> ({NEAR.network}). You can sign in with this wallet.</p>
           : <div className="flex flex-wrap items-center gap-3"><p className="text-sm text-muted">Link a NEAR account to sign in with your wallet and pay in stablecoins.</p><a href="/api/auth/near/start?link=1" className="btn btn-ghost">Link NEAR wallet</a></div>}
       </Card>
       <Card title="Payments" className="mt-4">
-        {pays.length ? <table className="data"><thead><tr><th>Date</th><th>Plan</th><th className="r">Amount</th><th>Method</th><th>Reference</th><th>Status</th></tr></thead><tbody>
+        {pays.length ? <div className="overflow-x-auto"><table className="data"><thead><tr><th>Date</th><th>Plan</th><th className="r">Amount</th><th>Method</th><th>Reference</th><th>Status</th></tr></thead><tbody>
           {pays.map((p) => <tr key={p.id}><td>{fmtDate(p.createdAt)}</td><td>{p.plan} × {p.months}m</td><td className="r">{p.currency === "ZMW" ? `K${fmt(p.amount)}` : `${fmt(p.amount)} ${p.currency}`}</td><td>{p.network ?? p.provider}</td><td className="text-muted">{p.reference}</td><td><Badge color={p.status === "success" ? "green" : p.status === "failed" ? "red" : "amber"}>{p.status}</Badge></td></tr>)}
-        </tbody></table> : <p className="text-sm text-muted">No payments yet.</p>}
+        </tbody></table></div> : <p className="text-sm text-muted">No payments yet.</p>}
       </Card>
     </div>
   );
