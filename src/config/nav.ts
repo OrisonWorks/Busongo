@@ -1,4 +1,4 @@
-import { CRYPTO_ENABLED } from "./features";
+import { CRYPTO_ENABLED, PAPER_TRADING_ENABLED } from "./features";
 
 export type NavItem = { href: string; label: string; desc?: string };
 export type NavGroup = { label: string; items: NavItem[] };
@@ -66,7 +66,7 @@ export const SIDEBAR: NavGroup[] = [
     { href: "/backtester/advanced", label: "Advanced Backtester" },
     { href: "/strategies", label: "My Strategies" },
     { href: "/journal", label: "Journal" },
-    { href: "/paper", label: "Paper Trading" },
+    ...(PAPER_TRADING_ENABLED ? [{ href: "/paper", label: "Paper Trading" }] : []),
   ] },
   { label: "Research", items: [
     { href: "/scanner", label: "Scanner" },

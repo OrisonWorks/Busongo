@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { PLANS } from "@/config/plans";
 import type { FormState } from "@/app/(auth)/actions";
-import { PAYMENTS_ENABLED } from "@/config/features";
+import { PAPER_TRADING_ENABLED, PAYMENTS_ENABLED } from "@/config/features";
 
 export async function toggleWatch(symbol: string) {
   const u = await requireUser();
@@ -65,6 +65,7 @@ export async function deleteJournal(id: string) {
 }
 
 export async function paperTrade(_: FormState, fd: FormData): Promise<FormState> {
+  if (!PAPER_TRADING_ENABLED) return { error: "Paper trading is switched off" };
   const u = await requireUser();
   const symbol = String(fd.get("symbol") || "").toUpperCase();
   const side = fd.get("side") === "SELL" ? "SELL" : "BUY";
