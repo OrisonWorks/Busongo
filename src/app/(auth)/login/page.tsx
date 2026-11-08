@@ -13,7 +13,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
       <AuthForm action={login} submit="Sign in" hidden={{ next }} fields={[{ name: "email", label: "Email", type: "email" }, { name: "password", label: "Password", type: "password" }]} />
       {WEB3_ENABLED && <>
       <div className="my-4 flex items-center gap-3 text-xs text-muted"><span className="h-px flex-1 bg-border" />or<span className="h-px flex-1 bg-border" /></div>
-      <a href={`/api/auth/near/start?next=${encodeURIComponent(next)}`} className="btn btn-ghost w-full justify-center">Sign in with NEAR wallet</a>
+      <a href={`/api/auth/near/start?next=${encodeURIComponent(next)}`} className="btn btn-ghost w-full justify-center">Sign in with wallet</a>
       <p className="mt-1 text-center text-xs text-muted">New wallets get a Busongo account automatically. No email needed.</p>
       </>}
       <div className="mt-4 flex justify-between text-sm text-muted">

@@ -226,6 +226,9 @@ model User {
   phone         String?
   passwordHash  String
   nearAccountId String?   @unique
+  handle        String?   @unique
+  bio           String?
+  profilePublic Boolean   @default(false)
   role          Role      @default(USER)
   plan          Plan      @default(FREE)
   planExpiresAt DateTime?
@@ -245,6 +248,7 @@ model User {
   paperTrades   PaperTrade[]
   proofs        Proof[]
   chats         ChatMessage[]
+  roadmapVotes  RoadmapVote[]
 }
 
 model Strategy {
@@ -436,4 +440,25 @@ model Proof {
   createdAt  DateTime  @default(now())
 
   @@index([kind, refId])
+}
+
+model RoadmapItem {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  description String
+  status      String        @default("open")
+  createdAt   DateTime      @default(now())
+  votes       RoadmapVote[]
+}
+
+model RoadmapVote {
+  id        String      @id @default(cuid())
+  itemId    String
+  item      RoadmapItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@unique([itemId, userId])
 }

@@ -16,7 +16,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <div>
       <PageHeader title={`Backtest · ${c.symbols.join(", ")}`} subtitle={`${r.kind} backtest run on ${fmtDate(r.createdAt)}`}>
-        {WEB3_ENABLED && proof && <Link href={`/verify/${proof.hash}`} className="btn btn-ghost">{proof.txHash ? "Verified on NEAR ✓" : "Fingerprinted ✓"}</Link>}
+        {WEB3_ENABLED && proof && <Link href={`/verify/${proof.hash}`} className="btn btn-ghost">{proof.txHash ? "Verified record ✓" : "Fingerprinted ✓"}</Link>}
         <Link href="/backtester/advanced" className="btn btn-primary">Build your own</Link>
       </PageHeader>
       <div className="grid gap-4 md:grid-cols-2">
