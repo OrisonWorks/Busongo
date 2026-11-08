@@ -25,6 +25,7 @@ const aggregator: PaymentProvider = {
   id: "aggregator",
   label: "Mobile Money",
   async charge(p) {
+    if (!process.env.PAYMENT_WEBHOOK_SECRET) return { status: "failed", message: "Payments are not fully configured (missing webhook secret)" };
     const r = await fetch(process.env.PAYMENT_CHARGE_URL!, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.PAYMENT_API_KEY}` },
