@@ -35,8 +35,10 @@ const aggregator: PaymentProvider = {
     return { status: "pending", externalRef: j.id ?? j.transactionId, message: "Approve the prompt on your phone." };
   },
   async verifyWebhook(req, body) {
+    const secret = process.env.PAYMENT_WEBHOOK_SECRET;
+    if (!secret) return null;
     const sig = req.headers.get("x-signature") || "";
-    const want = crypto.createHmac("sha256", process.env.PAYMENT_WEBHOOK_SECRET || "").update(body).digest("hex");
+    const want = crypto.createHmac("sha256", secret).update(body).digest("hex");
     if (!sig || sig.length !== want.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want))) return null;
     const j = JSON.parse(body);
     return { reference: j.reference, status: j.status === "success" || j.status === "successful" ? "success" : "failed", externalRef: j.id };
