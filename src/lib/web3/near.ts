@@ -4,7 +4,7 @@ import { Account, JsonRpcProvider } from "near-api-js";
 const mainnet = process.env.NEAR_NETWORK === "mainnet";
 export const NEAR = {
   network: mainnet ? "mainnet" : "testnet",
-  rpc: process.env.NEAR_RPC_URL || (mainnet ? "https://rpc.mainnet.near.org" : "https://rpc.testnet.near.org"),
+  rpc: process.env.NEAR_RPC_URL || (mainnet ? "https://rpc.mainnet.fastnear.com" : "https://rpc.testnet.fastnear.com"),
   wallet: process.env.NEAR_WALLET_URL || (mainnet ? "https://app.mynearwallet.com" : "https://testnet.mynearwallet.com"),
   explorer: mainnet ? "https://nearblocks.io" : "https://testnet.nearblocks.io",
   social: mainnet ? "social.near" : "v1.social08.testnet",
@@ -19,19 +19,26 @@ export const NEAR = {
 };
 export type Stablecoin = keyof typeof NEAR.tokens;
 export const anchoringEnabled = () => !!(process.env.NEAR_ACCOUNT_ID && process.env.NEAR_PRIVATE_KEY);
-export const stablePaymentsEnabled = () => !!NEAR.merchant;
+/** Testnet only until NEAR_MAINNET_PAYMENTS="1" is set (needs SEC Zambia / BoZ clearance first). */
+export const stablePaymentsEnabled = () => !!NEAR.merchant && (NEAR.network === "testnet" || process.env.NEAR_MAINNET_PAYMENTS === "1");
 export const txUrl = (h: string) => `${NEAR.explorer}/txns/${h}`;
 export const accountUrl = (a: string) => `${NEAR.explorer}/address/${a}`;
 
 async function rpc<T>(method: string, params: unknown): Promise<T> {
-  const r = await fetch(NEAR.rpc, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: "busongo", method, params }), cache: "no-store" });
-  const j = await r.json();
+  const body = JSON.stringify({ jsonrpc: "2.0", id: "busongo", method, params });
+  let r = await fetch(NEAR.rpc, { method: "POST", headers: { "Content-Type": "application/json" }, body, cache: "no-store" });
+  if (r.status === 429 || r.status >= 500) {
+    await new Promise((ok) => setTimeout(ok, 1000));
+    r = await fetch(NEAR.rpc, { method: "POST", headers: { "Content-Type": "application/json" }, body, cache: "no-store" });
+  }
+  const j = await r.json().catch(() => null);
+  if (!j) throw new Error(`NEAR RPC unavailable (HTTP ${r.status})`);
   if (j.error) throw new Error(j.error.cause?.name || j.error.message || "NEAR RPC error");
   return j.result as T;
 }
 
-export async function view<T>(contract: string, method: string, args: object = {}): Promise<T> {
-  const r = await rpc<{ result: number[] }>("query", { request_type: "call_function", finality: "final", account_id: contract, method_name: method, args_base64: Buffer.from(JSON.stringify(args)).toString("base64") });
+export async function view<T>(contract: string, method: string, args: object = {}, finality: "final" | "optimistic" = "final"): Promise<T> {
+  const r = await rpc<{ result: number[] }>("query", { request_type: "call_function", finality, account_id: contract, method_name: method, args_base64: Buffer.from(JSON.stringify(args)).toString("base64") });
   return JSON.parse(Buffer.from(r.result).toString());
 }
 
@@ -93,6 +100,6 @@ export async function anchorHash(hash: string, kind: string) {
 
 /** Read back what NEAR Social holds for `hash` under the Busongo account (independent check). */
 export async function readAnchor(hash: string, signer = NEAR.signer) {
-  const r = await view<Record<string, { busongo?: { proofs?: Record<string, string> } }>>(NEAR.social, "get", { keys: [`${signer}/busongo/proofs/${hash}`] });
+  const r = await view<Record<string, { busongo?: { proofs?: Record<string, string> } }>>(NEAR.social, "get", { keys: [`${signer}/busongo/proofs/${hash}`] }, "optimistic");
   return r[signer]?.busongo?.proofs?.[hash] ?? null;
 }

@@ -67,8 +67,14 @@ export async function confirmStablePayment(_: FormState, fd: FormData): Promise<
   if (!/^[a-z0-9._-]{2,64}$/.test(sender)) return { error: "Enter the NEAR account you paid from" };
   if (await prisma.payment.findFirst({ where: { externalRef: txHash, status: "success" } })) return { error: "That transaction has already been used" };
   const token = NEAR.tokens[p.currency as Stablecoin];
-  const minUnits = toUnits(p.amount, await ftDecimals(token));
-  const v = await verifyFtTransfer({ txHash, sender, token, receiver: NEAR.merchant, minUnits, memo: p.reference });
+  let v: Awaited<ReturnType<typeof verifyFtTransfer>>;
+  try {
+    const minUnits = toUnits(p.amount, await ftDecimals(token));
+    v = await verifyFtTransfer({ txHash, sender, token, receiver: NEAR.merchant, minUnits, memo: p.reference });
+  } catch (e) {
+    console.error("NEAR payment verification failed", e);
+    return { error: "Couldn't reach the NEAR network to check this transaction. Try again in a minute." };
+  }
   if (!v.ok) return { error: v.error };
   await settle(reference, "success", txHash);
   redirect(`/payment?ref=${reference}`);

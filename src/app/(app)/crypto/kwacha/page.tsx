@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { CRYPTO_ENABLED } from "@/config/features";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getMacro, getQuotes, latestMacro } from "@/lib/market";
@@ -12,6 +14,7 @@ export const metadata = { title: "Kwacha & Stablecoins", description: "Crypto pr
 export const revalidate = 600;
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ fx?: string }> }) {
+  if (!CRYPTO_ENABLED) notFound();
   const sp = await searchParams;
   const [m, buyH, sellH, offH, curve, q, lastY] = await Promise.all([latestMacro(), getMacro(P2P_BUY), getMacro(P2P_SELL), getMacro("USDZMW"), yieldCurve(), getQuotes("CRYPTO"), prisma.stableYield.findFirst({ orderBy: { date: "desc" } })]);
   const pools = lastY ? await prisma.stableYield.findMany({ where: { date: lastY.date }, orderBy: { tvlUsd: "desc" }, take: 15 }) : [];

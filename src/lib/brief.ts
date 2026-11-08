@@ -3,6 +3,7 @@ import { prisma } from "./db";
 import { breadth, getIndex, getQuotes, latestMacro } from "./market";
 import { aiConfigured, complete } from "./ai";
 import { BRIEF_PROMPT } from "./ai/prompts";
+import { CRYPTO_ENABLED } from "@/config/features";
 
 const f = (v: number | null | undefined, d = 2) => (v == null ? "n/a" : v.toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d }));
 const sp = (v: number | null | undefined) => (v == null ? "n/a" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`);
@@ -22,7 +23,7 @@ export async function briefFacts() {
     macro: m,
     tbills: tbills.map((t) => ({ tenorDays: t.tenorDays, yield: t.yield })),
     tbillDate: lastAuction?.auctionDate.toISOString().slice(0, 10) ?? null,
-    crypto: cr.filter((q) => ["BTC", "ETH", "SOL", "BNB"].includes(q.symbol)).slice(0, 4),
+    crypto: (CRYPTO_ENABLED ? cr : []).filter((q) => ["BTC", "ETH", "SOL", "BNB"].includes(q.symbol)).slice(0, 4),
   };
 }
 export type BriefFacts = Awaited<ReturnType<typeof briefFacts>>;
@@ -37,7 +38,10 @@ export function templateBrief(x: BriefFacts) {
   const m = x.macro;
   const p3 = `${x.tbills.length ? `At the ${x.tbillDate} T-bill auction, yields were ${x.tbills.map((t) => `${t.tenorDays}-day ${f(t.yield)}%`).join(", ")}. ` : ""}The BoZ policy rate stands at ${f(m.MPR?.value)}%, annual inflation at ${f(m.INFLATION?.value, 1)}% and the kwacha at K${f(m.USDZMW?.value, 4)} per US dollar.`;
   const p2p = m.P2P_USDT_ZMW_BUY && m.P2P_USDT_ZMW_SELL && m.USDZMW ? (m.P2P_USDT_ZMW_BUY.value + m.P2P_USDT_ZMW_SELL.value) / 2 : null;
-  const p4 = x.crypto.length ? `In crypto, ${x.crypto.map((q) => `${q.symbol} ${sp(q.changePct)} at $${f(q.close)}`).join(", ")}.${p2p && m.USDZMW ? ` On Binance P2P, USDT changed hands at about K${f(p2p)}, ${sp((p2p / m.USDZMW.value - 1) * 100)} versus the official rate.` : ""}` : "";
+  const p4 = [
+    x.crypto.length ? `In crypto, ${x.crypto.map((q) => `${q.symbol} ${sp(q.changePct)} at $${f(q.close)}`).join(", ")}.` : "",
+    p2p && m.USDZMW ? `On Binance P2P, USDT changed hands at about K${f(p2p)}, ${sp((p2p / m.USDZMW.value - 1) * 100)} versus the official rate.` : "",
+  ].filter(Boolean).join(" ");
   return [p1, p2, p3, p4].filter(Boolean).join("\n\n");
 }
 
