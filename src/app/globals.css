@@ -54,3 +54,14 @@ table.data .r { text-align: right; }
 .prose-dark th, .prose-dark td { border: 1px solid var(--line); padding: .4rem .6rem; text-align: left; }
 .prose-dark strong { color: var(--fg); }
 .prose-dark a { color: var(--brand); }
+
+/* Accessibility settings (A11yMenu) and OS preferences */
+html[data-text="lg"] { font-size: 112.5%; }
+html[data-text="xl"] { font-size: 125%; }
+html[data-contrast="high"] { --bg: #000; --panel: #000; --panel-2: #141414; --line: #a3aec4; --fg: #fff; --muted: #e5e9f0; --brand: #4ade80; --up: #4ade80; --down: #fca5a5; }
+html[data-contrast="high"] .prose-dark p, html[data-contrast="high"] .prose-dark li { color: #fff; }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+html[data-motion="reduce"] *, html[data-motion="reduce"] *::before, html[data-motion="reduce"] *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+.skip-link { position: absolute; left: -9999px; top: .5rem; z-index: 100; }
+.skip-link:focus { left: 1rem; background: var(--brand); color: #04120c; padding: .5rem 1rem; border-radius: .5rem; font-weight: 600; }

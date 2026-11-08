@@ -2,6 +2,8 @@ import { bondHistory, tbillHistory, yieldCurve } from "@/lib/fixed-income";
 import { latestMacro } from "@/lib/market";
 import FiTabs from "@/components/FiTabs";
 import { Card, PageHeader, Stat } from "@/components/ui";
+import PlainBox from "@/components/PlainBox";
+import Glossed from "@/components/Glossed";
 import { LineChartBox } from "@/components/charts/LineChartBox";
 import { fmt, fmtDate } from "@/lib/format";
 import { realYield } from "@/lib/fi";
@@ -18,11 +20,12 @@ export default async function Page() {
     <div>
       <PageHeader title="Fixed Income" subtitle="Government of the Republic of Zambia Treasury bills and bonds from Bank of Zambia auction results." />
       <FiTabs active="/fixed-income" />
+      <PlainBox topics={["tbill", "rate", "prices"]} />
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <Stat label="Policy rate (MPR)" value={`${fmt(m.MPR?.value)}%`} sub={fmtDate(m.MPR?.date)} />
+        <Stat label={<Glossed k="policy-rate">Policy rate (MPR)</Glossed>} value={`${fmt(m.MPR?.value)}%`} sub={fmtDate(m.MPR?.date)} />
         <Stat label="Annual inflation" value={`${fmt(inf)}%`} sub={fmtDate(m.INFLATION?.date)} />
-        <Stat label="364-day T-bill" value={`${fmt(t364?.yield)}%`} sub={inf != null && t364 ? `Real ${fmt(realYield(t364.yield, inf))}%` : undefined} />
-        <Stat label={`${longest?.tenor ?? "Longest"} bond`} value={`${fmt(longest?.yield)}%`} sub={longest ? `Coupon ${fmt(longest.coupon)}%` : undefined} />
+        <Stat label={<Glossed k="tbill">364-day T-bill</Glossed>} value={`${fmt(t364?.yield)}%`} sub={inf != null && t364 ? `Real ${fmt(realYield(t364.yield, inf))}%` : undefined} />
+        <Stat label={<Glossed k="bond">{`${longest?.tenor ?? "Longest"} bond`}</Glossed>} value={`${fmt(longest?.yield)}%`} sub={longest ? `Coupon ${fmt(longest.coupon)}%` : undefined} />
         <Stat label="Interbank (overnight)" value={`${fmt(m.INTERBANK?.value)}%`} sub={fmtDate(m.INTERBANK?.date)} />
         <Stat label="Term spread" value={t364 && longest ? `${fmt((longest.yield - t364.yield) * 100, 0)} bp` : "—"} sub="Longest bond − 364d" />
       </div>

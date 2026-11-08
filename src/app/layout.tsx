@@ -6,6 +6,8 @@ import Footer from "@/components/Footer";
 import HideOnEmbed from "@/components/HideOnEmbed";
 import { brand } from "@/config/brand";
 import { getUser } from "@/lib/auth";
+import { getLocale } from "@/lib/i18n/server";
+import { A11Y_BOOT } from "@/components/A11yMenu";
 
 const sans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -18,12 +20,14 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const user = await getUser();
+  const [user, lang] = await Promise.all([getUser(), getLocale()]);
   return (
-    <html lang="en">
+    <html lang={lang} suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: A11Y_BOOT }} /></head>
       <body className={`${sans.variable} ${mono.variable} antialiased`}>
-        <HideOnEmbed><Navbar user={user ? { name: user.name, email: user.email, plan: user.plan, role: user.role } : null} /></HideOnEmbed>
-        <main>{children}</main>
+        <HideOnEmbed><a href="#main" className="skip-link">Skip to main content</a></HideOnEmbed>
+        <HideOnEmbed><Navbar user={user ? { name: user.name, email: user.email, plan: user.plan, role: user.role } : null} lang={lang} /></HideOnEmbed>
+        <main id="main" tabIndex={-1}>{children}</main>
         <HideOnEmbed><Footer /></HideOnEmbed>
       </body>
     </html>
