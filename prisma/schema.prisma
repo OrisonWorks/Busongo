@@ -430,6 +430,7 @@ model Proof {
   hash       String    @unique
   payload    Json
   network    String?
+  signer     String?
   txHash     String?
   anchoredAt DateTime?
   createdAt  DateTime  @default(now())

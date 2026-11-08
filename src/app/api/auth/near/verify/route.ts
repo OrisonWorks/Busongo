@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { createSession, hashPassword } from "@/lib/auth";
 import { NEAR, hasFullAccessKey } from "@/lib/web3/near";
 import { implicitAccountOf, verifyNep413 } from "@/lib/web3/nep413";
-import { NEAR_COOKIE, SIGNIN_MESSAGE, readChallenge } from "@/lib/web3/session";
+import { NEAR_COOKIE, SIGNIN_MESSAGE, WALLET_EMAIL_DOMAIN, readChallenge } from "@/lib/web3/session";
 
 const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
 
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ next: ch.next, accountId });
   }
   const user = existing ?? await prisma.user.create({
-    data: { email: `${accountId}@wallet.busongo.invalid`, name: accountId, nearAccountId: accountId, passwordHash: await hashPassword(crypto.randomBytes(32).toString("hex")) },
+    data: { email: `${accountId}@${WALLET_EMAIL_DOMAIN}`, name: accountId, nearAccountId: accountId, passwordHash: await hashPassword(crypto.randomBytes(32).toString("hex")) },
   });
   await createSession(user.id);
   return NextResponse.json({ next: ch.next, accountId });

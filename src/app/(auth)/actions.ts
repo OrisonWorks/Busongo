@@ -6,9 +6,10 @@ import { prisma } from "@/lib/db";
 import { createSession, hashPassword, isAdminEmail, verifyPassword } from "@/lib/auth";
 import { sendMail } from "@/lib/mail";
 import { brand } from "@/config/brand";
+import { safeNext as safePath } from "@/lib/web3/session";
 
 export type FormState = { error?: string; ok?: string } | undefined;
-const safeNext = (n: FormDataEntryValue | null) => (typeof n === "string" && n.startsWith("/") && !n.startsWith("//") ? n : "/dashboard");
+const safeNext = (n: FormDataEntryValue | null) => safePath(typeof n === "string" ? n : null);
 
 const registerSchema = z.object({
   name: z.string().trim().min(2, "Enter your name"),

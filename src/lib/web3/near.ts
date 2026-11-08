@@ -98,7 +98,7 @@ export async function anchorHash(hash: string, kind: string) {
 }
 
 /** Read back what NEAR Social holds for `hash` under the Busongo account (independent check). */
-export async function readAnchor(hash: string) {
-  const r = await view<Record<string, { busongo?: { proofs?: Record<string, string> } }>>(NEAR.social, "get", { keys: [`${NEAR.signer}/busongo/proofs/${hash}`] }, "optimistic");
-  return r[NEAR.signer]?.busongo?.proofs?.[hash] ?? null;
+export async function readAnchor(hash: string, signer = NEAR.signer) {
+  const r = await view<Record<string, { busongo?: { proofs?: Record<string, string> } }>>(NEAR.social, "get", { keys: [`${signer}/busongo/proofs/${hash}`] }, "optimistic");
+  return r[signer]?.busongo?.proofs?.[hash] ?? null;
 }
