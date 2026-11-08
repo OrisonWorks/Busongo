@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PLANS, PLAN_ORDER } from "@/config/plans";
 import { getUser } from "@/lib/auth";
+import { CRYPTO_ENABLED } from "@/config/features";
 
 export const metadata = { title: "Pricing" };
 
@@ -57,7 +58,7 @@ export default async function Pricing() {
         {[
           ["How do I pay?", "Choose a plan, enter your Airtel Money or MTN MoMo number and approve the prompt on your phone. Your plan is activated as soon as the payment is confirmed."],
           ["Can I cancel?", "Plans are prepaid and do not renew automatically. You keep access until the end of the period you paid for."],
-          ["Where does the data come from?", "Equity prices and announcements come from the Lusaka Securities Exchange's public pages. Auction results and macro rates come from the Bank of Zambia. Crypto prices come from Binance public market data."],
+          ["Where does the data come from?", `Equity prices and announcements come from the Lusaka Securities Exchange's public pages. Auction results and macro rates come from the Bank of Zambia.${CRYPTO_ENABLED ? " Crypto prices come from Binance public market data." : ""}`],
           ["Is this investment advice?", "No. The platform is for research and education. Always do your own due diligence and speak to a licensed LuSE broker before investing."],
         ].map(([q, a]) => (
           <details key={q} className="card p-4"><summary className="cursor-pointer font-medium">{q}</summary><p className="mt-2 text-sm text-muted">{a}</p></details>

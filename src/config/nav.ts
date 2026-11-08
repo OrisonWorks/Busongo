@@ -1,3 +1,5 @@
+import { CRYPTO_ENABLED } from "./features";
+
 export type NavItem = { href: string; label: string; desc?: string };
 export type NavGroup = { label: string; items: NavItem[] };
 
@@ -18,8 +20,10 @@ export const PRODUCTS: NavGroup[] = [
     { href: "/market", label: "Market Terminal", desc: "LASI, movers, breadth, heatmap and turnover" },
     { href: "/fixed-income", label: "Fixed Income", desc: "T-bills, GRZ bonds and the yield curve" },
     { href: "/macro", label: "Macro Dashboard", desc: "Policy rate, inflation, interbank and kwacha" },
-    { href: "/crypto", label: "Crypto", desc: "Charts and backtests for major cryptocurrencies" },
-    { href: "/crypto/kwacha", label: "Kwacha & Stablecoins", desc: "Crypto in ZMW, USDT/ZMW P2P premium, stablecoin vs T-bill yields" },
+    ...(CRYPTO_ENABLED ? [
+      { href: "/crypto", label: "Crypto", desc: "Charts and backtests for major cryptocurrencies" },
+      { href: "/crypto/kwacha", label: "Kwacha & Stablecoins", desc: "Crypto in ZMW, USDT/ZMW P2P premium, stablecoin vs T-bill yields" },
+    ] : []),
   ] },
   { label: "Tools", items: [
     { href: "/tools/gann", label: "Gann Tools", desc: "Square of 9, Gann angles and time cycles" },
@@ -89,5 +93,5 @@ export const SIDEBAR: NavGroup[] = [
     { href: "/calendar", label: "Calendars" },
     { href: "/alerts", label: "Alerts" },
   ] },
-  { label: "Crypto", items: [{ href: "/crypto", label: "Crypto Markets" }, { href: "/crypto/kwacha", label: "Kwacha & Stablecoins" }] },
+  ...(CRYPTO_ENABLED ? [{ label: "Crypto", items: [{ href: "/crypto", label: "Crypto Markets" }, { href: "/crypto/kwacha", label: "Kwacha & Stablecoins" }] }] : []),
 ];

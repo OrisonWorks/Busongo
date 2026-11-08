@@ -19,7 +19,8 @@ export const NEAR = {
 };
 export type Stablecoin = keyof typeof NEAR.tokens;
 export const anchoringEnabled = () => !!(process.env.NEAR_ACCOUNT_ID && process.env.NEAR_PRIVATE_KEY);
-export const stablePaymentsEnabled = () => !!NEAR.merchant;
+/** Testnet only until NEAR_MAINNET_PAYMENTS="1" is set (needs SEC Zambia / BoZ clearance first). */
+export const stablePaymentsEnabled = () => !!NEAR.merchant && (NEAR.network === "testnet" || process.env.NEAR_MAINNET_PAYMENTS === "1");
 export const txUrl = (h: string) => `${NEAR.explorer}/txns/${h}`;
 export const accountUrl = (a: string) => `${NEAR.explorer}/address/${a}`;
 

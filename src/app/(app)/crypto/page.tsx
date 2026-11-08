@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { CRYPTO_ENABLED } from "@/config/features";
 import { getQuotes } from "@/lib/market";
 import QuoteTable from "@/components/QuoteTable";
 import Link from "next/link";
@@ -5,6 +7,7 @@ import { Card, PageHeader } from "@/components/ui";
 export const metadata = { title: "Crypto Markets" };
 export const revalidate = 600;
 export default async function Page() {
+  if (!CRYPTO_ENABLED) notFound();
   const q = await getQuotes("CRYPTO");
   return (
     <div>
