@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { PAPER_TRADING_ENABLED } from "@/config/features";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { getQuotes } from "@/lib/market";
@@ -9,6 +11,7 @@ import { PAPER_START, paperBook } from "@/lib/paper";
 
 export const metadata = { title: "Paper Trading" };
 export default async function Page() {
+  if (!PAPER_TRADING_ENABLED) notFound();
   const u = await requireUser("/paper");
   const [trades, eq, cr] = await Promise.all([prisma.paperTrade.findMany({ where: { userId: u.id }, orderBy: { createdAt: "desc" } }), getQuotes("EQUITY"), getQuotes("CRYPTO")]);
   const px = new Map([...eq, ...cr].map((q) => [q.symbol, q.close ?? 0]));

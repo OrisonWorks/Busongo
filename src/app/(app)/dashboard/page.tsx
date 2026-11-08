@@ -8,6 +8,7 @@ import { PLANS } from "@/config/plans";
 import BriefCard from "@/components/BriefCard";
 import { Card, Chg, PageHeader, Stat } from "@/components/ui";
 import { fmt, fmtDate, kwacha, pct } from "@/lib/format";
+import { PAYMENTS_ENABLED } from "@/config/features";
 
 export const metadata = { title: "Dashboard" };
 export default async function Page() {
@@ -25,7 +26,7 @@ export default async function Page() {
   const w = q.filter((x) => watch.some((y) => y.symbol === x.symbol));
   return (
     <div>
-      <PageHeader title={`Welcome${u.name ? `, ${u.name.split(" ")[0]}` : ""}`} subtitle={<>{plan.label} plan{u.planExpiresAt && u.effectivePlan !== "FREE" ? ` · renews by ${fmtDate(u.planExpiresAt)}` : ""} · <Link href="/pricing" className="text-brand">Upgrade</Link></>} />
+      <PageHeader title={`Welcome${u.name ? `, ${u.name.split(" ")[0]}` : ""}`} subtitle={PAYMENTS_ENABLED ? <>{plan.label} plan{u.planExpiresAt && u.effectivePlan !== "FREE" ? ` · renews by ${fmtDate(u.planExpiresAt)}` : ""} · <Link href="/pricing" className="text-brand">Upgrade</Link></> : "Your markets, strategies and alerts."} />
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label="LASI" value={fmt(l?.value)} change={l?.pctChange} />
         <Stat label="MPR" value={`${fmt(m.MPR?.value)}%`} />

@@ -1,4 +1,5 @@
 import type { Plan } from "@prisma/client";
+import { PAYMENTS_ENABLED } from "@/config/features";
 
 export type PlanLimits = {
   id: Plan;
@@ -53,6 +54,7 @@ export const PLANS: Record<Plan, PlanLimits> = {
 export const PLAN_ORDER: Plan[] = ["FREE", "ADVANCED", "PRO"];
 
 export function effectivePlan(user: { plan: Plan; planExpiresAt: Date | null } | null): Plan {
+  if (!PAYMENTS_ENABLED) return "PRO";
   if (!user) return "FREE";
   if (user.plan !== "FREE" && user.planExpiresAt && user.planExpiresAt < new Date()) return "FREE";
   return user.plan;

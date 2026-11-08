@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { brand } from "@/config/brand";
 import { PRODUCTS, RESOURCES, SOLUTIONS, type NavItem } from "@/config/nav";
+import { PAYMENTS_ENABLED } from "@/config/features";
 
 function Menu({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
   return (
@@ -51,7 +52,7 @@ export default function Navbar({ user }: { user: { name: string | null; email: s
           </Menu>
           <Menu label="Solutions">{SOLUTIONS.map((i) => <Item key={i.href} i={i} />)}</Menu>
           <Menu label="Resources">{RESOURCES.map((i) => <Item key={i.href} i={i} />)}</Menu>
-          <Link href="/pricing" className="px-3 py-2 text-sm text-muted hover:text-fg">Pricing</Link>
+          {PAYMENTS_ENABLED && <Link href="/pricing" className="px-3 py-2 text-sm text-muted hover:text-fg">Pricing</Link>}
           <Link href="/market" className="px-3 py-2 text-sm text-muted hover:text-fg">Markets</Link>
         </nav>
         <div className="ml-auto hidden items-center gap-2 lg:flex">
@@ -80,7 +81,7 @@ export default function Navbar({ user }: { user: { name: string | null; email: s
               {g.items.map((i) => <Link key={i.href} href={i.href} className="block py-1 text-sm">{i.label}</Link>)}
             </div>
           ))}
-          <Link href="/pricing" className="block py-1 text-sm">Pricing</Link>
+          {PAYMENTS_ENABLED && <Link href="/pricing" className="block py-1 text-sm">Pricing</Link>}
           <Link href="/blog" className="block py-1 text-sm">Blog</Link>
           <div className="mt-3 flex gap-2">
             {user ? <Link href="/dashboard" className="btn btn-primary">Dashboard</Link> : <><Link href="/login" className="btn btn-ghost">Sign in</Link><Link href="/register" className="btn btn-primary">Start free</Link></>}

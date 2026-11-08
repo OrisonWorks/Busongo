@@ -8,9 +8,11 @@ import { detectNetwork, normalizePhone, provider, settle, type Network } from "@
 import type { FormState } from "@/app/(auth)/actions";
 import { latestMacro } from "@/lib/market";
 import { NEAR, ftDecimals, stablePaymentsEnabled, toUnits, verifyFtTransfer, type Stablecoin } from "@/lib/web3/near";
+import { PAYMENTS_ENABLED } from "@/config/features";
 
 const DISCOUNT: Record<number, number> = { 1: 0, 3: 0.05, 6: 0.1, 12: 0.2 };
 export async function startPayment(_: FormState, fd: FormData): Promise<FormState> {
+  if (!PAYMENTS_ENABLED) return { error: "Payments are switched off" };
   const u = await requireUser();
   const plan = String(fd.get("plan"));
   const months = Number(fd.get("months"));
@@ -32,6 +34,7 @@ export async function startPayment(_: FormState, fd: FormData): Promise<FormStat
 }
 
 export async function sandboxApprove(reference: string) {
+  if (!PAYMENTS_ENABLED) return;
   const u = await requireUser();
   if (provider().id !== "sandbox") return;
   const p = await prisma.payment.findFirst({ where: { reference, userId: u.id, provider: "sandbox" } });
@@ -40,6 +43,7 @@ export async function sandboxApprove(reference: string) {
 }
 
 export async function startStablePayment(_: FormState, fd: FormData): Promise<FormState> {
+  if (!PAYMENTS_ENABLED) return { error: "Payments are switched off" };
   const u = await requireUser();
   const plan = String(fd.get("plan"));
   const months = Number(fd.get("months"));
@@ -57,6 +61,7 @@ export async function startStablePayment(_: FormState, fd: FormData): Promise<Fo
 }
 
 export async function confirmStablePayment(_: FormState, fd: FormData): Promise<FormState> {
+  if (!PAYMENTS_ENABLED) return { error: "Payments are switched off" };
   const u = await requireUser();
   const reference = String(fd.get("ref"));
   const txHash = String(fd.get("txHash") || "").trim();
@@ -67,8 +72,14 @@ export async function confirmStablePayment(_: FormState, fd: FormData): Promise<
   if (!/^[a-z0-9._-]{2,64}$/.test(sender)) return { error: "Enter the NEAR account you paid from" };
   if (await prisma.payment.findFirst({ where: { externalRef: txHash, status: "success" } })) return { error: "That transaction has already been used" };
   const token = NEAR.tokens[p.currency as Stablecoin];
-  const minUnits = toUnits(p.amount, await ftDecimals(token));
-  const v = await verifyFtTransfer({ txHash, sender, token, receiver: NEAR.merchant, minUnits, memo: p.reference });
+  let v: Awaited<ReturnType<typeof verifyFtTransfer>>;
+  try {
+    const minUnits = toUnits(p.amount, await ftDecimals(token));
+    v = await verifyFtTransfer({ txHash, sender, token, receiver: NEAR.merchant, minUnits, memo: p.reference });
+  } catch (e) {
+    console.error("NEAR payment verification failed", e);
+    return { error: "Couldn't reach the NEAR network to check this transaction. Try again in a minute." };
+  }
   if (!v.ok) return { error: v.error };
   await settle(reference, "success", txHash);
   redirect(`/payment?ref=${reference}`);

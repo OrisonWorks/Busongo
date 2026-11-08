@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { brand } from "@/config/brand";
 import { PRODUCTS, RESOURCES } from "@/config/nav";
+import { PAYMENTS_ENABLED } from "@/config/features";
 
 export default function Footer() {
   return (
@@ -24,7 +25,7 @@ export default function Footer() {
         <div>
           <div className="mb-2 text-sm font-semibold">Company</div>
           {RESOURCES.map((i) => <Link key={i.href} href={i.href} className="block py-0.5 text-sm text-muted hover:text-fg">{i.label}</Link>)}
-          <Link href="/pricing" className="block py-0.5 text-sm text-muted hover:text-fg">Pricing</Link>
+          {PAYMENTS_ENABLED && <Link href="/pricing" className="block py-0.5 text-sm text-muted hover:text-fg">Pricing</Link>}
           <Link href="/terms" className="block py-0.5 text-sm text-muted hover:text-fg">Terms</Link>
           <Link href="/privacy" className="block py-0.5 text-sm text-muted hover:text-fg">Privacy</Link>
           <Link href="/refund" className="block py-0.5 text-sm text-muted hover:text-fg">Refund policy</Link>

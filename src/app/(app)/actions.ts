@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { PLANS } from "@/config/plans";
 import type { FormState } from "@/app/(auth)/actions";
+import { PAPER_TRADING_ENABLED, PAYMENTS_ENABLED } from "@/config/features";
 
 export async function toggleWatch(symbol: string) {
   const u = await requireUser();
@@ -24,7 +25,7 @@ export async function createAlert(_: FormState, fd: FormData): Promise<FormState
   if (!p.success) return { error: p.error.issues[0].message };
   const limit = PLANS[u.effectivePlan].alerts;
   const n = await prisma.alert.count({ where: { userId: u.id, active: true } });
-  if (n >= limit) return { error: `Your ${PLANS[u.effectivePlan].label} plan allows ${limit} active alerts. Upgrade for more.` };
+  if (n >= limit) return { error: PAYMENTS_ENABLED ? `Your ${PLANS[u.effectivePlan].label} plan allows ${limit} active alerts. Upgrade for more.` : `You can have up to ${limit} active alerts.` };
   const sec = await prisma.security.findUnique({ where: { symbol: p.data.symbol.toUpperCase() } });
   if (!sec) return { error: "Unknown symbol" };
   await prisma.alert.create({ data: { userId: u.id, securityId: sec.id, metric: p.data.metric, operator: p.data.operator, threshold: p.data.threshold } });
@@ -64,6 +65,7 @@ export async function deleteJournal(id: string) {
 }
 
 export async function paperTrade(_: FormState, fd: FormData): Promise<FormState> {
+  if (!PAPER_TRADING_ENABLED) return { error: "Paper trading is switched off" };
   const u = await requireUser();
   const symbol = String(fd.get("symbol") || "").toUpperCase();
   const side = fd.get("side") === "SELL" ? "SELL" : "BUY";

@@ -3,9 +3,11 @@ import { NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { NEAR } from "@/lib/web3/near";
 import { NEAR_COOKIE, SIGNIN_MESSAGE, safeNext, signChallenge } from "@/lib/web3/session";
+import { WEB3_ENABLED } from "@/config/features";
 
 /** Starts NEP-413 sign-in (or account linking with ?link=1): redirects to the wallet with a fresh 32-byte nonce. */
 export async function GET(req: Request) {
+  if (!WEB3_ENABLED) return NextResponse.json({ error: "not found" }, { status: 404 });
   const url = new URL(req.url);
   const link = url.searchParams.get("link") === "1";
   const u = link ? await getUser() : null;

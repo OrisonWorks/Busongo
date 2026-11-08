@@ -1,5 +1,5 @@
 import { getUser } from "@/lib/auth";
-import { planAtLeast } from "@/config/plans";
+import { planAtLeast, effectivePlan } from "@/config/plans";
 import PlanLock from "@/components/PlanLock";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
@@ -12,7 +12,7 @@ export const metadata = { title: "Fundamentals Screener" };
 const COLS = [["pe", "P/E", 1], ["pb", "P/B", 2], ["divYield", "Div yield %", 2], ["roe", "ROE %", 1], ["netMargin", "Net margin %", 1], ["debtToEquity", "D/E", 2], ["payout", "Payout %", 0]] as const;
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const viewer = await getUser();
-  if (!planAtLeast(viewer?.effectivePlan ?? "FREE", "ADVANCED")) return (
+  if (!planAtLeast(viewer?.effectivePlan ?? effectivePlan(null), "ADVANCED")) return (
     <div>
       <PageHeader title="Fundamentals Screener" subtitle="Valuation, profitability and leverage for LuSE companies, from published annual results." />
       <PlanLock min="ADVANCED" feature="Fundamentals screener tools" signedIn={!!viewer} />

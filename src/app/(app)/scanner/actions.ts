@@ -4,12 +4,12 @@ import { prisma } from "@/lib/db";
 import { getUser, requireUser } from "@/lib/auth";
 import { getAllBars } from "@/lib/market";
 import { runScan, type ScanConfig, type ScanHit } from "@/lib/engine/scanner";
-import { PLANS } from "@/config/plans";
+import { PLANS, effectivePlan } from "@/config/plans";
 import type { Prisma } from "@prisma/client";
 
 export async function scanAction(cfg: ScanConfig & { asset?: "EQUITY" | "CRYPTO"; symbols?: string[] }): Promise<{ hits: ScanHit[]; total: number; limit: number; error?: string }> {
   const user = await getUser();
-  const plan = user?.effectivePlan ?? "FREE";
+  const plan = user?.effectivePlan ?? effectivePlan(null);
   const from = new Date(Date.now() - 800 * 86400000);
   const data = await getAllBars(cfg.asset ?? "EQUITY", from);
   if (cfg.symbols?.length) for (const k of [...data.keys()]) if (!cfg.symbols.includes(k)) data.delete(k);
