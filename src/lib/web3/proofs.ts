@@ -5,6 +5,7 @@ import { getIndex, latestMacro } from "../market";
 import { yieldCurve } from "../fixed-income";
 import { NEAR, anchorHash, anchoringEnabled } from "./near";
 import { proofHash } from "./proof";
+import { WEB3_ENABLED } from "@/config/features";
 
 export const backtestPayload = (r: BacktestRun) => ({ v: 1, app: "busongo", kind: "backtest", id: r.id, strategyId: r.strategyId, engine: r.kind, config: r.config, summary: r.summary, ranAt: r.createdAt.toISOString() });
 export const strategyPayload = (s: Strategy) => ({ v: 1, app: "busongo", kind: "strategy", id: s.id, name: s.name, engine: s.kind, config: s.config, savedAt: s.updatedAt.toISOString() });
@@ -34,6 +35,7 @@ export async function createProof(o: { userId?: string | null; kind: string; ref
 }
 
 export async function anchorMarketData() {
+  if (!WEB3_ENABLED) return { skipped: "web3 disabled" };
   const payload = await marketDataPayload();
   if (!payload) return { skipped: "no LASI data" };
   const p = await createProof({ kind: "market-data", refId: payload.date, payload });

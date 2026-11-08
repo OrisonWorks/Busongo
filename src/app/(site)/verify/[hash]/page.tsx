@@ -5,10 +5,12 @@ import { Badge, Card, PageHeader } from "@/components/ui";
 import { fmtDate } from "@/lib/format";
 import { NEAR, accountUrl, readAnchor, txUrl } from "@/lib/web3/near";
 import { canonical, proofHash } from "@/lib/web3/proof";
+import { WEB3_ENABLED } from "@/config/features";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Verify proof" };
 export default async function Page({ params }: { params: Promise<{ hash: string }> }) {
+  if (!WEB3_ENABLED) notFound();
   const { hash } = await params;
   if (!/^[0-9a-f]{64}$/.test(hash)) notFound();
   const p = await prisma.proof.findUnique({ where: { hash } });

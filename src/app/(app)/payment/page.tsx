@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
@@ -8,9 +9,11 @@ import { Badge, Card, PageHeader } from "@/components/ui";
 import { fmt } from "@/lib/format";
 import { confirmStablePayment, sandboxApprove, startPayment, startStablePayment } from "./actions";
 import { NEAR, accountUrl, stablePaymentsEnabled, txUrl } from "@/lib/web3/near";
+import { PAYMENTS_ENABLED } from "@/config/features";
 
 export const metadata = { title: "Upgrade" };
 export default async function Page({ searchParams }: { searchParams: Promise<{ plan?: string; ref?: string }> }) {
+  if (!PAYMENTS_ENABLED) notFound();
   const { plan = "ADVANCED", ref } = await searchParams;
   const u = await requireUser("/payment");
   const pv = provider();

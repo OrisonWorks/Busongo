@@ -7,6 +7,7 @@ import { fmtDate } from "@/lib/format";
 import { addCorporateAction, importFundamentalsAction, importPricesAction, runIngest, setPlan } from "./actions";
 import FundamentalsExtractor from "./FundamentalsExtractor";
 import { aiConfigured } from "@/lib/ai";
+import { WEB3_ENABLED } from "@/config/features";
 
 export const metadata = { title: "Admin" };
 export default async function Page() {
@@ -33,7 +34,7 @@ export default async function Page() {
         <Stat label="Recent revenue" value={`K${paid.toFixed(2)}`} sub={`last 20 payments${paidStable ? ` · plus $${paidStable.toFixed(2)} in stablecoins` : ""}`} />
       </div>
       <Card title="Ingestion" className="mt-4">
-        <div className="mb-3 flex gap-2">{(["luse", "boz", "crypto", "p2p", "defi", "brief", "sens-ai", "proofs"] as const).map((j) => <form key={j} action={runIngest.bind(null, j)}><button className="btn btn-ghost">{j === "brief" ? "Generate daily brief" : j === "sens-ai" ? "Summarise SENS (AI)" : j === "proofs" ? "Anchor market data on NEAR" : `Run ${j.toUpperCase()} now`}</button></form>)}</div>
+        <div className="mb-3 flex gap-2">{(["luse", "boz", "crypto", "p2p", "defi", "brief", "sens-ai", "proofs"] as const).filter((j) => WEB3_ENABLED || j !== "proofs").map((j) => <form key={j} action={runIngest.bind(null, j)}><button className="btn btn-ghost">{j === "brief" ? "Generate daily brief" : j === "sens-ai" ? "Summarise SENS (AI)" : j === "proofs" ? "Anchor market data on NEAR" : `Run ${j.toUpperCase()} now`}</button></form>)}</div>
         <table className="data"><thead><tr><th>Started</th><th>Source</th><th>Status</th><th>Message</th></tr></thead><tbody>{runs.map((r) => <tr key={r.id}><td>{r.startedAt.toISOString().slice(0, 16).replace("T", " ")}</td><td>{r.source}</td><td><Badge color={r.status === "ok" ? "green" : r.status === "error" ? "red" : "amber"}>{r.status}</Badge></td><td className="max-w-[480px] truncate text-xs text-muted">{r.message}</td></tr>)}</tbody></table>
       </Card>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">

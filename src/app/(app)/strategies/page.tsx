@@ -5,6 +5,7 @@ import { Card, Empty, PageHeader } from "@/components/ui";
 import { fmtDate, pct } from "@/lib/format";
 import { proveBacktest, proveStrategy } from "../proofs/actions";
 import { anchoringEnabled } from "@/lib/web3/near";
+import { WEB3_ENABLED } from "@/config/features";
 
 export const metadata = { title: "My Strategies" };
 export default async function Page() {
@@ -16,13 +17,14 @@ export default async function Page() {
   const proofs = new Map((await prisma.proof.findMany({ where: { userId: u.id }, orderBy: { createdAt: "asc" }, select: { refId: true, hash: true, txHash: true } })).map((p) => [p.refId, p]));
   const onChain = anchoringEnabled();
   const Prove = ({ id, act }: { id: string; act: (id: string) => Promise<void> }) => {
+    if (!WEB3_ENABLED) return null;
     const p = proofs.get(id);
     if (p && (p.txHash || !onChain)) return <Link className="ml-3 text-up" href={`/verify/${p.hash}`}>{p.txHash ? "Verified ✓" : "Fingerprinted ✓"}</Link>;
     return <form action={act.bind(null, id)} className="ml-3 inline"><button className="text-brand" title="Record a SHA-256 fingerprint on NEAR so this can never be edited silently">{p ? "Retry on NEAR" : "Prove"}</button></form>;
   };
   return (
     <div>
-      <PageHeader title="My Strategies" subtitle="Saved strategies and your recent backtest runs. Prove one to fix its fingerprint on the NEAR blockchain, so it can be shared as a tamper-evident track record." />
+      <PageHeader title="My Strategies" subtitle={WEB3_ENABLED ? "Saved strategies and your recent backtest runs. Prove one to fix its fingerprint on the NEAR blockchain, so it can be shared as a tamper-evident track record." : "Saved strategies and your recent backtest runs."} />
       <Card title="Saved strategies">
         {strats.length ? <div className="overflow-x-auto"><table className="data"><thead><tr><th>Name</th><th>Type</th><th>Symbols</th><th>Saved</th><th></th></tr></thead><tbody>
           {strats.map((s) => { const c = s.config as { symbols?: string[] }; return <tr key={s.id}><td className="font-medium">{s.name}</td><td>{s.kind}</td><td>{c.symbols?.join(", ")}</td><td>{fmtDate(s.updatedAt)}</td><td><Link className="text-brand" href={s.kind === "advanced" ? `/backtester/advanced?strategy=${s.id}` : `/backtester?strategy=${s.id}`}>Open</Link><Prove id={s.id} act={proveStrategy} /></td></tr>; })}

@@ -7,6 +7,7 @@ import { yieldCurve } from "@/lib/fixed-income";
 import { Chg } from "@/components/ui";
 import { fmt, kwacha, fmtDate } from "@/lib/format";
 import { LineChartBox } from "@/components/charts/LineChartBox";
+import { PAYMENTS_ENABLED } from "@/config/features";
 
 export const revalidate = 600;
 
@@ -112,6 +113,7 @@ export default async function Home() {
         </div>
       </section>
 
+      {PAYMENTS_ENABLED ? (
       <section className="mx-auto max-w-[1400px] px-4 pb-8">
         <div className="card grid items-center gap-6 p-8 md:grid-cols-[1fr_auto]">
           <div>
@@ -123,6 +125,17 @@ export default async function Home() {
           <Link href="/pricing" className="btn btn-primary px-6 py-3">See plans</Link>
         </div>
       </section>
+      ) : (
+      <section className="mx-auto max-w-[1400px] px-4 pb-8">
+        <div className="card grid items-center gap-6 p-8 md:grid-cols-[1fr_auto]">
+          <div>
+            <h2 className="text-2xl font-bold">Free for everyone</h2>
+            <p className="mt-1 text-muted">Every scanner, backtester, fixed-income tool and AI feature, at no cost. No card, no subscription.</p>
+          </div>
+          <Link href="/register" className="btn btn-primary px-6 py-3">Create free account</Link>
+        </div>
+      </section>
+      )}
     </div>
   );
 }

@@ -6,10 +6,12 @@ import { createSession, hashPassword } from "@/lib/auth";
 import { NEAR, hasFullAccessKey } from "@/lib/web3/near";
 import { implicitAccountOf, verifyNep413 } from "@/lib/web3/nep413";
 import { NEAR_COOKIE, SIGNIN_MESSAGE, WALLET_EMAIL_DOMAIN, readChallenge } from "@/lib/web3/session";
+import { WEB3_ENABLED } from "@/config/features";
 
 const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
 
 export async function POST(req: Request) {
+  if (!WEB3_ENABLED) return NextResponse.json({ error: "not found" }, { status: 404 });
   const jar = await cookies();
   const ch = await readChallenge(jar.get(NEAR_COOKIE)?.value);
   if (!ch) return fail("Sign-in request expired. Please try again.");

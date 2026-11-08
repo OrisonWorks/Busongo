@@ -1,4 +1,5 @@
 import { brand } from "@/config/brand";
+import { PAYMENTS_ENABLED } from "@/config/features";
 export const metadata = { title: "About us" };
 export default function Page() {
   return (
@@ -10,7 +11,7 @@ export default function Page() {
       <h2>Our principles</h2>
       <ul>
         <li><strong>Real costs.</strong> Every backtest includes LuSE, SEC and broker fees.</li>
-        <li><strong>Local context.</strong> Kwacha pricing, Zambian holidays, Mobile Money payments and T-bill benchmarks.</li>
+        <li><strong>Local context.</strong> {PAYMENTS_ENABLED ? "Kwacha pricing, Zambian holidays, Mobile Money payments and T-bill benchmarks." : "Kwacha figures, Zambian holidays and T-bill benchmarks."}</li>
         <li><strong>Transparency.</strong> Every number links back to its LuSE or BoZ source.</li>
       </ul>
       <p>{brand.address} · {brand.email}</p>

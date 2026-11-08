@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { Card, PageHeader } from "@/components/ui";
 import { describeCond, type Cond } from "@/lib/engine/series";
 import { fmt, fmtDate, pct } from "@/lib/format";
+import { WEB3_ENABLED } from "@/config/features";
 
 export const metadata = { title: "Backtest result" };
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
@@ -15,7 +16,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <div>
       <PageHeader title={`Backtest · ${c.symbols.join(", ")}`} subtitle={`${r.kind} backtest run on ${fmtDate(r.createdAt)}`}>
-        {proof && <Link href={`/verify/${proof.hash}`} className="btn btn-ghost">{proof.txHash ? "Verified on NEAR ✓" : "Fingerprinted ✓"}</Link>}
+        {WEB3_ENABLED && proof && <Link href={`/verify/${proof.hash}`} className="btn btn-ghost">{proof.txHash ? "Verified on NEAR ✓" : "Fingerprinted ✓"}</Link>}
         <Link href="/backtester/advanced" className="btn btn-primary">Build your own</Link>
       </PageHeader>
       <div className="grid gap-4 md:grid-cols-2">

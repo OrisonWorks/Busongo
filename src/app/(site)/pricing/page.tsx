@@ -1,7 +1,8 @@
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { PLANS, PLAN_ORDER } from "@/config/plans";
 import { getUser } from "@/lib/auth";
-import { CRYPTO_ENABLED } from "@/config/features";
+import { CRYPTO_ENABLED, PAYMENTS_ENABLED } from "@/config/features";
 
 export const metadata = { title: "Pricing" };
 
@@ -22,6 +23,7 @@ const FEATURES: [string, (p: (typeof PLANS)[keyof typeof PLANS]) => string | boo
 ];
 
 export default async function Pricing() {
+  if (!PAYMENTS_ENABLED) notFound();
   const user = await getUser();
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-16">

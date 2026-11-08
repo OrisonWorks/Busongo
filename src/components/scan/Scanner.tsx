@@ -7,7 +7,7 @@ import { PRESET_SCANS } from "@/lib/engine/scanner";
 import { scanAction, saveScan } from "@/app/(app)/scanner/actions";
 import CondBuilder from "@/components/backtest/CondBuilder";
 import { compact, fmt, pct, tone } from "@/lib/format";
-import { CRYPTO_ENABLED } from "@/config/features";
+import { CRYPTO_ENABLED, PAYMENTS_ENABLED } from "@/config/features";
 
 export type SavedScanConfig = { conds: Cond[]; join: "AND" | "OR"; asset?: "EQUITY" | "CRYPTO"; sector?: string; minValue?: string };
 type Res = Awaited<ReturnType<typeof scanAction>>;
@@ -48,7 +48,7 @@ export default function Scanner({ sectors, signedIn, watchSymbols, initial }: { 
         </div>
         {res && (
           <div className="card overflow-x-auto p-4">
-            <div className="mb-2 text-sm"><b>{res.total}</b> matches{res.total > res.limit && <span className="text-amber-300"> · showing {res.limit} on your plan (<Link href="/pricing" className="underline">upgrade</Link>)</span>}</div>
+            <div className="mb-2 text-sm"><b>{res.total}</b> matches{res.total > res.limit && <span className="text-amber-300"> · showing {res.limit}{PAYMENTS_ENABLED && <> on your plan (<Link href="/pricing" className="underline">upgrade</Link>)</>}</span>}</div>
             {res.hits.length ? (
               <table className="data"><thead><tr><th>Symbol</th><th>Date</th><th className="r">Close</th><th className="r">% Chg</th><th className="r">RSI(14)</th><th className="r">Value</th><th></th></tr></thead>
                 <tbody>{res.hits.map((h) => <tr key={h.symbol}><td><Link className="font-semibold text-brand" href={`/${asset === "CRYPTO" ? "crypto" : "stocks"}/${h.symbol}`}>{h.symbol}</Link></td><td>{h.date}</td><td className="num r">{fmt(h.close)}</td><td className={`num r ${tone(h.changePct)}`}>{pct(h.changePct)}</td><td className="num r">{fmt(h.rsi, 1)}</td><td className="num r">{compact(h.value)}</td><td><Link href={`/backtester?symbol=${h.symbol}`} className="text-xs text-brand">Backtest</Link></td></tr>)}</tbody></table>

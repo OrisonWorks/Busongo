@@ -11,6 +11,7 @@ import { ccy, compact, fmt, fmtDate, fmtInt } from "@/lib/format";
 import { Series } from "@/lib/engine/series";
 import { pivots } from "@/lib/indicators";
 import { valuation } from "@/lib/fundamentals";
+import { CRYPTO_ENABLED } from "@/config/features";
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }) {
   const s = await getSecurity((await params).symbol);
@@ -52,7 +53,7 @@ export default async function Page({ params }: { params: Promise<{ symbol: strin
   return (
     <div>
       <PageHeader
-        crumbs={[{ href: base, label: crypto ? "Crypto" : "Stocks" }]}
+        crumbs={[crypto && !CRYPTO_ENABLED ? { href: "/backtester", label: "Backtester" } : { href: base, label: crypto ? "Crypto" : "Stocks" }]}
         title={`${sec.symbol} · ${sec.name}`}
         subtitle={<span className="flex flex-wrap gap-2">{sec.sector && <Badge>{sec.sector}</Badge>}{sec.board && !crypto && <Badge color="blue">{sec.board} Board</Badge>}{sec.isin && <Badge>{sec.isin}</Badge>}<Badge color="amber">{sec.currency}</Badge></span>}
       >
