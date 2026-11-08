@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { getProvider, settle } from "@/lib/pay";
-import { PAYMENTS_ENABLED } from "@/config/features";
 
 export async function POST(req: Request, { params }: { params: Promise<{ provider: string }> }) {
-  if (!PAYMENTS_ENABLED) return NextResponse.json({ error: "not found" }, { status: 404 });
   const p = getProvider((await params).provider);
   if (!p) return NextResponse.json({ error: "unknown provider" }, { status: 404 });
   const body = await req.text();
