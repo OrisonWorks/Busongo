@@ -7,6 +7,7 @@ import { Badge, Card, PageHeader } from "@/components/ui";
 import { fmt, fmtDate } from "@/lib/format";
 import { changePassword, updateProfile } from "./actions";
 import { NEAR, accountUrl } from "@/lib/web3/near";
+import { isWalletOnly } from "@/lib/web3/session";
 
 export const metadata = { title: "Profile" };
 export default async function Page() {
@@ -29,10 +30,10 @@ export default async function Page() {
           <Link href="/pricing" className="btn btn-primary mt-4">Change plan</Link>
         </Card>
         <Card title="Password">
-          <ActionForm action={changePassword} submit="Change password" className="space-y-2">
+          {isWalletOnly(u) ? <p className="text-sm text-muted">This account signs in with your NEAR wallet, so it has no password.</p> : <ActionForm action={changePassword} submit="Change password" className="space-y-2">
             <input name="current" type="password" placeholder="Current password" className="input" required />
             <input name="password" type="password" placeholder="New password" className="input" required />
-          </ActionForm>
+          </ActionForm>}
         </Card>
       </div>
       <Card title="NEAR wallet" className="mt-4">

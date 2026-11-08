@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { hashPassword, requireUser, verifyPassword } from "@/lib/auth";
 import type { FormState } from "@/app/(auth)/actions";
+import { isWalletOnly } from "@/lib/web3/session";
 
 export async function updateProfile(_: FormState, fd: FormData): Promise<FormState> {
   const u = await requireUser();
@@ -15,6 +16,7 @@ export async function updateProfile(_: FormState, fd: FormData): Promise<FormSta
 }
 export async function changePassword(_: FormState, fd: FormData): Promise<FormState> {
   const u = await requireUser();
+  if (isWalletOnly(u)) return { error: "This account signs in with a NEAR wallet and has no password" };
   if (!(await verifyPassword(String(fd.get("current") || ""), u.passwordHash))) return { error: "Current password is incorrect" };
   const pw = String(fd.get("password") || "");
   if (pw.length < 8) return { error: "New password must be at least 8 characters" };

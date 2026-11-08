@@ -14,3 +14,6 @@ export async function readChallenge(token?: string) {
 }
 /** Same-origin path only: rejects `//host`, `/\host` and control characters/whitespace, which browsers strip or treat as `/`. */
 export const safeNext = (n: string | null | undefined, d = "/dashboard") => (n && /^\/(?![/\\])[^\\\s\u0000-\u001f]*$/.test(n) ? n : d);
+
+export const WALLET_EMAIL_DOMAIN = "wallet.busongo.invalid";
+export const isWalletOnly = (u: { email: string }) => u.email.endsWith(`@${WALLET_EMAIL_DOMAIN}`);
