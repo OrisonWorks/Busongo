@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { importFundamentals, importPrices } from "@/lib/csv-import";
 import { ingestBoz } from "@/lib/ingest/boz";
 import { ingestCrypto } from "@/lib/ingest/crypto";
-import { ingestLuse } from "@/lib/ingest/luse";
+import { ingestLuse, ingestLusePaste } from "@/lib/ingest/luse";
 import { evaluateAlerts } from "@/lib/alerts";
 import { generateBrief } from "@/lib/brief";
 import { ingestP2P } from "@/lib/ingest/p2p";
@@ -22,6 +22,20 @@ async function text(fd: FormData) {
   const f = fd.get("file");
   if (f instanceof File && f.size) return f.text();
   return String(fd.get("csv") || "");
+}
+export async function importLusePasteAction(_: FormState, fd: FormData): Promise<FormState> {
+  await requireAdmin();
+  const run = await prisma.ingestRun.create({ data: { source: "luse-paste", status: "running" } });
+  try {
+    const r = await ingestLusePaste(String(fd.get("page") || ""));
+    await evaluateAlerts();
+    await prisma.ingestRun.update({ where: { id: run.id }, data: { status: "ok", rows: r.rows, message: JSON.stringify(r), endedAt: new Date() } });
+    revalidatePath("/", "layout");
+    return { ok: `Saved ${r.rows} share prices${r.lasi ? " and the LASI" : ""} for ${r.date.toISOString().slice(0, 10)}.` };
+  } catch (e) {
+    await prisma.ingestRun.update({ where: { id: run.id }, data: { status: "error", message: String(e).slice(0, 1000), endedAt: new Date() } });
+    return { error: `Couldn't read that (${e instanceof Error ? e.message : e}). Copy the whole LuSE Market Data page (Ctrl+A, then Ctrl+C) and paste it here.` };
+  }
 }
 export async function importPricesAction(_: FormState, fd: FormData): Promise<FormState> {
   await requireAdmin();

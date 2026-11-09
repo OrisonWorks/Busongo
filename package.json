@@ -11,6 +11,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx scripts/seed.ts",
     "ingest": "tsx --conditions=react-server scripts/ingest.ts",
+    "luse:reminder": "tsx --conditions=react-server scripts/luse-reminder.ts",
     "ingest:luse": "tsx scripts/ingest.ts luse",
     "ingest:boz": "tsx scripts/ingest.ts boz",
     "ingest:crypto": "tsx scripts/ingest.ts crypto",
