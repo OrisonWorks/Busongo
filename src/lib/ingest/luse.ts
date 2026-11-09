@@ -6,13 +6,35 @@ export const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
 
 type Row = Record<string, string>;
 
+const MARKET_DATA_URL = "https://www.luse.co.zm/trading/market-data/";
+
+async function saveDebug(page: import("playwright").Page, attempt: number, detail: string) {
+  const dir = process.env.LUSE_DEBUG_DIR;
+  if (!dir) return;
+  const { mkdir, writeFile } = await import("node:fs/promises");
+  await mkdir(dir, { recursive: true });
+  const text = await page.innerText("body").catch(() => "");
+  await writeFile(`${dir}/attempt-${attempt}.txt`, `${detail}\nurl: ${page.url()}\n\n${text.slice(0, 5000)}`);
+  await page.screenshot({ path: `${dir}/attempt-${attempt}.png`, fullPage: true }).catch(() => {});
+}
+
 export async function scrapeLuse() {
   const { chromium } = await import("playwright");
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage({ userAgent: UA });
-    await page.goto("https://www.luse.co.zm/trading/market-data/", { waitUntil: "domcontentloaded", timeout: 90000 });
-    await page.waitForSelector("table", { timeout: 60000 });
+    for (let attempt = 1; ; attempt++) {
+      const res = await page.goto(MARKET_DATA_URL, { waitUntil: "domcontentloaded", timeout: 90000 }).catch((e: Error) => e);
+      const ok = !(res instanceof Error) && (await page.waitForSelector("table", { timeout: 60000 }).then(() => true, () => false));
+      if (ok) break;
+      const status = res instanceof Error ? res.message.split("\n")[0] : `HTTP ${res?.status()}`;
+      const title = await page.title().catch(() => "");
+      const detail = `LuSE: no price table (attempt ${attempt}, ${status}, title "${title}")`;
+      await saveDebug(page, attempt, detail);
+      if (attempt >= 2) throw new Error(detail);
+      console.warn(detail + "; retrying");
+      await page.waitForTimeout(15000);
+    }
     const body = await page.innerText("body");
     const tables: Row[][] = await page.$$eval("table", (ts) =>
       ts.map((t) => {

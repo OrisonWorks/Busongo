@@ -12,6 +12,7 @@ jobs:
       NEAR_NETWORK: ${{ vars.NEAR_NETWORK }}
       NEAR_ACCOUNT_ID: ${{ secrets.NEAR_ACCOUNT_ID }}
       NEAR_PRIVATE_KEY: ${{ secrets.NEAR_PRIVATE_KEY }}
+      LUSE_DEBUG_DIR: luse-debug
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,3 +21,10 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npx prisma migrate deploy
       - run: npm run ingest -- luse boz crypto p2p defi brief sens-ai proofs roadmap
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: luse-debug
+          path: luse-debug/
+          if-no-files-found: ignore
+          retention-days: 14
