@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseLusePaste } from "@/lib/ingest/luse";
+import { parseLuseAnnouncements, parseLusePaste } from "@/lib/ingest/luse";
 import { expectedLuseSession } from "@/lib/luse-due";
 
 const page = [
@@ -45,6 +45,35 @@ describe("LuSE page paste", () => {
   it("rejects text without prices", () => {
     expect(() => parseLusePaste("hello")).toThrow(/market date/);
     expect(() => parseLusePaste("Market Data as of\n06/11/2026\n")).toThrow(/no share prices/);
+  });
+});
+
+describe("LuSE homepage paste (SENS)", () => {
+  // Verbatim shape of the SENS DOCUMENTS block on luse.co.zm (copied 9 Nov 2026).
+  const home = [
+    "Skip to main content",
+    "Home",
+    "SENS DOCUMENTS",
+    "MFS Mandatory Offer-Results",
+    "General Announcements",
+    "9 November, 2026",
+    "DOWNLOAD",
+    "SHOPRITE_OPERATIONAL NOTICE",
+    "General Announcements",
+    "6 November, 2026",
+    "DOWNLOAD",
+    "VIEW ALL DOCUMENTS",
+  ].join("\n");
+  it("reads announcements without PDF links", () => {
+    const s = parseLuseAnnouncements(home);
+    expect(s).toHaveLength(2);
+    expect(s[0]).toMatchObject({ title: "MFS Mandatory Offer-Results", category: "General Announcements", url: null });
+    expect(s[0].date.toISOString().slice(0, 10)).toBe("2026-11-09");
+    expect(s[1]).toMatchObject({ title: "SHOPRITE_OPERATIONAL NOTICE", category: "General Announcements" });
+    expect(s[1].date.toISOString().slice(0, 10)).toBe("2026-11-06");
+  });
+  it("finds nothing on unrelated text", () => {
+    expect(parseLuseAnnouncements("Market Data as of\n06/11/2026\n")).toEqual([]);
   });
 });
 

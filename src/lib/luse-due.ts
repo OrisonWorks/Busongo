@@ -3,6 +3,8 @@ import { zambianHolidays } from "./data/holidays";
 const LUSAKA_UTC_OFFSET_H = 2;
 /** LuSE posts the day's closing prices some time after the 14:00 close; by this Lusaka hour we expect them. */
 export const LUSE_POSTED_BY_HOUR = 17;
+/** A complete session has prices for at least this many shares (LuSE lists ~23-25; a partial paste has far fewer). */
+export const MIN_SESSION_PRICE_BARS = 15;
 const DAY = 864e5;
 
 export function isLuseTradingDay(d: Date) {

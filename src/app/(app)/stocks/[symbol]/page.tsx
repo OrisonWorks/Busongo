@@ -96,7 +96,10 @@ export default async function Page({ params }: { params: Promise<{ symbol: strin
             {sec.description && <p className="mt-3 text-sm text-muted">{sec.description}</p>}
           </Card>
           <Card title="SENS announcements">
-            {sens.length ? sens.map((a) => <a key={a.id} href={a.url ?? "#"} target="_blank" rel="noreferrer" className="block border-b border-line/50 py-2 text-sm last:border-0 hover:text-brand">{a.title}<div className="text-xs text-muted">{a.category} · {fmtDate(a.date)}</div>{a.summary && <div className="mt-1 whitespace-pre-line text-xs text-muted">{a.summary}</div>}</a>) : <p className="text-sm text-muted">No announcements stored.</p>}
+            {sens.length ? sens.map((a) => {
+              const body = <>{a.title}<div className="text-xs text-muted">{a.category} · {fmtDate(a.date)}</div>{a.summary && <div className="mt-1 whitespace-pre-line text-xs text-muted">{a.summary}</div>}</>;
+              return a.url ? <a key={a.id} href={a.url} target="_blank" rel="noreferrer" className="block border-b border-line/50 py-2 text-sm last:border-0 hover:text-brand">{body}</a> : <div key={a.id} className="block border-b border-line/50 py-2 text-sm last:border-0">{body}</div>;
+            }) : <p className="text-sm text-muted">No announcements stored.</p>}
             {actions.length > 0 && <div className="mt-3 text-sm"><div className="mb-1 font-semibold">Corporate actions</div>{actions.map((a) => <div key={a.id} className="text-muted">{a.type} {a.amount ? `K${a.amount}` : ""} · ex {fmtDate(a.exDate)}</div>)}</div>}
           </Card>
         </div>

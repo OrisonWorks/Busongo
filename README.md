@@ -21,7 +21,7 @@ Register with an address listed in `ADMIN_EMAILS` to get access to `/admin`.
 ## Data sources
 | Source | What | How |
 |---|---|---|
-| luse.co.zm | Daily equity prices, LASI, market summary, listed bonds, SENS | Headless Chromium (plain HTTP is blocked). LuSE's site also blocks GitHub's servers, so daily prices are pasted into /admin; `.github/workflows/luse-reminder.yml` opens a GitHub issue when they're missing |
+| luse.co.zm | Daily equity prices, LASI, market summary, listed bonds, SENS | Headless Chromium (plain HTTP is blocked). LuSE's site also blocks GitHub's servers, so daily prices and SENS announcements are pasted into /admin; `.github/workflows/luse-reminder.yml` opens a GitHub issue when prices are missing or incomplete |
 | boz.zm JSON APIs | T-bill & bond auctions, MPR, inflation, interbank, OLF, USD/ZMW | `fetch` |
 | data-api.binance.vision | Daily crypto candles | `fetch` |
 
@@ -30,7 +30,7 @@ LuSE publishes only the current session, so equity history accumulates from the 
 - Fundamentals: `symbol,fiscalyear,revenue,grossprofit,operatingprofit,netincome,totalassets,totalliabilities,totalequity,totaldebt,cash,operatingcashflow,capex,eps,dps,sharesoutstanding,sourceurl`
 
 ## Scheduling
-- `.github/workflows/ingest.yml` — weekdays after market close; runs all ingestors including LuSE (needs the `DATABASE_URL` repo secret).
+- `.github/workflows/ingest.yml` — weekdays after market close; runs every ingestor except LuSE (needs the `DATABASE_URL` repo secret).
 - `vercel.json` cron → `/api/cron` — BoZ + crypto only (no headless browser on Vercel).
 
 ## Scripts

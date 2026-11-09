@@ -62,6 +62,41 @@ export async function scrapeLuse() {
   }
 }
 
+export type LuseAnnouncement = { title: string; category: string | null; date: Date; url: string | null };
+
+/** SENS filings listed on the LuSE homepage ("SENS DOCUMENTS" block), or from their PDF links when the block is absent. */
+export function parseSens(home: string, sensLinks: string[]): LuseAnnouncement[] {
+  const sens: LuseAnnouncement[] = [];
+  const sm = home.match(/SENS DOCUMENTS([\s\S]*?)VIEW ALL DOCUMENTS/);
+  if (sm) {
+    const blocks = sm[1].split(/\n\s*DOWNLOAD\s*\n?/).map((b) => b.trim()).filter(Boolean);
+    blocks.forEach((b, i) => {
+      const lines = b.split("\n").map((x) => x.trim()).filter(Boolean);
+      const dl = lines.findIndex((l) => /^\d{1,2} \w+,? \d{4}$/.test(l));
+      if (dl < 1) return;
+      const d = new Date(lines[dl].replace(",", "") + " UTC");
+      if (isNaN(+d)) return;
+      sens.push({ title: lines[0], category: dl > 1 ? lines[1] : null, date: new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())), url: sensLinks[i] || null });
+    });
+  }
+  if (!sens.length) {
+    for (const url of sensLinks) {
+      const f = decodeURIComponent(url.split("/").pop() || "");
+      if (!/\.pdf$/i.test(f)) continue;
+      const base = f.replace(/\.pdf$/i, "");
+      const dm = base.match(/(\d{1,2})[.\-_](\d{1,2})[.\-_](\d{2,4})(?!.*\d{1,2}[.\-_]\d{1,2}[.\-_]\d{2,4})/);
+      const um = url.match(/uploads\/(\d{4})\/(\d{2})\//);
+      let d: Date | null = null;
+      if (dm) d = new Date(Date.UTC(dm[3].length === 2 ? 2000 + +dm[3] : +dm[3], +dm[2] - 1, +dm[1]));
+      else if (um) d = new Date(Date.UTC(+um[1], +um[2] - 1, 1));
+      if (!d || isNaN(+d)) continue;
+      const title = base.replace(dm ? dm[0] : "", "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+      sens.push({ title, category: /result|financial|interim|FY|HY/i.test(title) ? "Financial Results" : /dividend/i.test(title) ? "Dividend" : /cautionary/i.test(title) ? "Cautionary" : "Announcement", date: d, url });
+    }
+  }
+  return sens;
+}
+
 export function parseLuse(s: Awaited<ReturnType<typeof scrapeLuse>>) {
   const dateM = s.body.match(/Market Data as of\s*\n?\s*(\d{1,2}\/\d{1,2}\/\d{4})/) || s.body.match(/LASI\s*\n\s*(\d{1,2}\/\d{1,2}\/\d{4})/);
   const date = dateM ? dmy(dateM[1]) : null;
@@ -113,35 +148,7 @@ export function parseLuse(s: Awaited<ReturnType<typeof scrapeLuse>>) {
     }))
     .filter((b) => b.isin && b.name);
 
-  const sens: { title: string; category: string | null; date: Date; url: string | null }[] = [];
-  const sm = s.home.match(/SENS DOCUMENTS([\s\S]*?)VIEW ALL DOCUMENTS/);
-  if (sm) {
-    const blocks = sm[1].split(/\n\s*DOWNLOAD\s*\n?/).map((b) => b.trim()).filter(Boolean);
-    blocks.forEach((b, i) => {
-      const lines = b.split("\n").map((x) => x.trim()).filter(Boolean);
-      const dl = lines.findIndex((l) => /^\d{1,2} \w+,? \d{4}$/.test(l));
-      if (dl < 1) return;
-      const d = new Date(lines[dl].replace(",", "") + " UTC");
-      if (isNaN(+d)) return;
-      sens.push({ title: lines[0], category: dl > 1 ? lines[1] : null, date: new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())), url: s.sensLinks[i] || null });
-    });
-  }
-  if (!sens.length) {
-    for (const url of s.sensLinks) {
-      const f = decodeURIComponent(url.split("/").pop() || "");
-      if (!/\.pdf$/i.test(f)) continue;
-      const base = f.replace(/\.pdf$/i, "");
-      const dm = base.match(/(\d{1,2})[.\-_](\d{1,2})[.\-_](\d{2,4})(?!.*\d{1,2}[.\-_]\d{1,2}[.\-_]\d{2,4})/);
-      const um = url.match(/uploads\/(\d{4})\/(\d{2})\//);
-      let d: Date | null = null;
-      if (dm) d = new Date(Date.UTC(dm[3].length === 2 ? 2000 + +dm[3] : +dm[3], +dm[2] - 1, +dm[1]));
-      else if (um) d = new Date(Date.UTC(+um[1], +um[2] - 1, 1));
-      if (!d || isNaN(+d)) continue;
-      const title = base.replace(dm ? dm[0] : "", "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
-      sens.push({ title, category: /result|financial|interim|FY|HY/i.test(title) ? "Financial Results" : /dividend/i.test(title) ? "Dividend" : /cautionary/i.test(title) ? "Cautionary" : "Announcement", date: d, url });
-    }
-  }
-  return { date, lasi, summary, stocks, bonds, sens };
+  return { date, lasi, summary, stocks, bonds, sens: parseSens(s.home, s.sensLinks) };
 }
 
 const STOCK_HEADS = ["Security", "ISIN code", "Closing Price (ZMW)", "Price Change", "Trades", "Volume Traded", "Value Traded (ZMW)", "Best Bid Price", "Best Bid Quantity", "Best Ask Price", "Best Ask Quantity"];
@@ -186,12 +193,23 @@ export function parseLusePaste(text: string) {
   return p;
 }
 
+/** SENS filings from the LuSE homepage as pasted by an admin (plain text has no PDF links). */
+export function parseLuseAnnouncements(text: string) {
+  return parseSens(text.replace(/\r/g, ""), []);
+}
+
 export async function ingestLuse() {
   return saveLuse(parseLuse(await scrapeLuse()));
 }
 
 export async function ingestLusePaste(text: string) {
   return saveLuse(parseLusePaste(text));
+}
+
+export async function ingestLuseAnnouncementsPaste(text: string) {
+  const sens = parseLuseAnnouncements(text);
+  if (!sens.length) throw new Error("LuSE: no SENS announcements found — copy the homepage (luse.co.zm) and paste it here");
+  return { sens: await saveSens(sens) };
 }
 
 async function saveLuse(p: ReturnType<typeof parseLuse>) {
@@ -249,8 +267,13 @@ async function saveLuse(p: ReturnType<typeof parseLuse>) {
   for (const b of p.bonds) {
     await prisma.listedBond.upsert({ where: { isin: b.isin }, update: b, create: { ...b, kind: "corporate" } });
   }
+  const sens = await saveSens(p.sens);
+  return { date: p.date, rows, lasi: p.lasi.value != null, bonds: p.bonds.length, sens };
+}
+
+async function saveSens(announcements: LuseAnnouncement[]) {
   const secs = await prisma.security.findMany({ select: { id: true, symbol: true } });
-  for (const a of p.sens) {
+  for (const a of announcements) {
     const sym = secs.find((s) => new RegExp(`\\b${s.symbol.replace("USD", "").split("-")[0]}\\b`, "i").test(a.title));
     await prisma.announcement.upsert({
       where: { title_date: { title: a.title, date: a.date } },
@@ -258,5 +281,5 @@ async function saveLuse(p: ReturnType<typeof parseLuse>) {
       create: { ...a, securityId: sym?.id },
     });
   }
-  return { date: p.date, rows, lasi: p.lasi.value != null, bonds: p.bonds.length, sens: p.sens.length };
+  return announcements.length;
 }
