@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { importFundamentals, importPrices } from "@/lib/csv-import";
 import { ingestBoz } from "@/lib/ingest/boz";
 import { ingestCrypto } from "@/lib/ingest/crypto";
-import { ingestLuse, ingestLusePaste } from "@/lib/ingest/luse";
+import { ingestLuse, ingestLuseAnnouncementsPaste, ingestLusePaste } from "@/lib/ingest/luse";
 import { evaluateAlerts } from "@/lib/alerts";
 import { generateBrief } from "@/lib/brief";
 import { ingestP2P } from "@/lib/ingest/p2p";
@@ -23,15 +23,39 @@ async function text(fd: FormData) {
   if (f instanceof File && f.size) return f.text();
   return String(fd.get("csv") || "");
 }
+/** The scheduled brief and ledger proof run before the day's LuSE prices are pasted, so refresh them after an upload. */
+async function refreshAfterUpload() {
+  try {
+    await generateBrief();
+  } catch (e) {
+    console.error("brief after upload", e);
+  }
+  try {
+    await anchorMarketData();
+  } catch (e) {
+    console.error("market-data proof after upload", e);
+  }
+}
 export async function importLusePasteAction(_: FormState, fd: FormData): Promise<FormState> {
   await requireAdmin();
   const run = await prisma.ingestRun.create({ data: { source: "luse-paste", status: "running" } });
   try {
     const r = await ingestLusePaste(String(fd.get("page") || ""));
+    let sensNote = "";
+    const sensText = String(fd.get("sens") || "").trim();
+    if (sensText) {
+      try {
+        const s = await ingestLuseAnnouncementsPaste(sensText);
+        sensNote = ` ${s.sens} SENS announcement${s.sens === 1 ? "" : "s"} saved.`;
+      } catch (e) {
+        sensNote = ` SENS paste failed: ${e instanceof Error ? e.message : e}`;
+      }
+    }
     await evaluateAlerts();
-    await prisma.ingestRun.update({ where: { id: run.id }, data: { status: "ok", rows: r.rows, message: JSON.stringify(r), endedAt: new Date() } });
+    await refreshAfterUpload();
+    await prisma.ingestRun.update({ where: { id: run.id }, data: { status: "ok", rows: r.rows, message: JSON.stringify({ ...r, sensNote }), endedAt: new Date() } });
     revalidatePath("/", "layout");
-    return { ok: `Saved ${r.rows} share prices${r.lasi ? " and the LASI" : ""} for ${r.date.toISOString().slice(0, 10)}.` };
+    return { ok: `Saved ${r.rows} share prices${r.lasi ? " and the LASI" : ""} for ${r.date.toISOString().slice(0, 10)}.${sensNote} Daily brief refreshed.` };
   } catch (e) {
     await prisma.ingestRun.update({ where: { id: run.id }, data: { status: "error", message: String(e).slice(0, 1000), endedAt: new Date() } });
     return { error: `Couldn't read that (${e instanceof Error ? e.message : e}). Copy the whole LuSE Market Data page (Ctrl+A, then Ctrl+C) and paste it here.` };
@@ -40,6 +64,7 @@ export async function importLusePasteAction(_: FormState, fd: FormData): Promise
 export async function importPricesAction(_: FormState, fd: FormData): Promise<FormState> {
   await requireAdmin();
   const r = await importPrices(await text(fd));
+  if (r.ok) await refreshAfterUpload();
   revalidatePath("/", "layout");
   return r.ok ? { ok: `Imported ${r.ok}/${r.total} rows.${r.errors.length ? " " + r.errors.join("; ") : ""}` } : { error: `Nothing imported. ${r.errors.join("; ")}` };
 }

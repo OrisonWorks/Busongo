@@ -27,6 +27,8 @@ jobs:
           DUE: ${{ steps.check.outputs.due }}
           EXPECTED: ${{ steps.check.outputs.expected }}
           LATEST: ${{ steps.check.outputs.latest }}
+          ROWS: ${{ steps.check.outputs.rows }}
+          REASON: ${{ steps.check.outputs.reason }}
           MENTION: ${{ vars.LUSE_REMINDER_MENTION || 'Mellorison' }}
           SITE: ${{ vars.SITE_URL || 'https://busongo.vercel.app' }}
         run: |
@@ -36,8 +38,13 @@ jobs:
           if [ "$DUE" = "true" ]; then
             day=$(date -d "$EXPECTED" '+%A %-d %B %Y')
             title="Upload LuSE prices for $day"
+            if [ "$REASON" = "partial" ]; then
+              first="@$MENTION The latest LuSE upload on Busongo looks incomplete: $LATEST has only $ROWS share prices (a full session has 15 or more). Please paste the whole Market Data page again."
+            else
+              first="@$MENTION LuSE prices for **$day** aren't on Busongo yet (latest stored: $LATEST)."
+            fi
             body=$(printf '%s\n' \
-              "@$MENTION LuSE prices for **$day** aren't on Busongo yet (latest stored: $LATEST)." \
+              "$first" \
               "" \
               "1. Open https://www.luse.co.zm/trading/market-data/ and check that \"Market Data as of\" shows $(date -d "$EXPECTED" '+%d/%m/%Y')." \
               "2. Select the whole page (Ctrl+A) and copy it (Ctrl+C)." \

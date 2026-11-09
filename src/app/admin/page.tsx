@@ -8,7 +8,7 @@ import { addCorporateAction, importFundamentalsAction, importLusePasteAction, im
 import FundamentalsExtractor from "./FundamentalsExtractor";
 import { aiConfigured } from "@/lib/ai";
 import { PAYMENTS_ENABLED, WEB3_ENABLED } from "@/config/features";
-import { expectedLuseSession } from "@/lib/luse-due";
+import { expectedLuseSession, MIN_SESSION_PRICE_BARS } from "@/lib/luse-due";
 
 export const metadata = { title: "Admin" };
 export default async function Page() {
@@ -24,6 +24,8 @@ export default async function Page() {
   ]);
   const expected = expectedLuseSession(new Date());
   const luseDue = !ds.equityLast || ds.equityLast < expected.toISOString().slice(0, 10);
+  const latestBars = !luseDue && ds.equityLast ? await prisma.priceBar.count({ where: { date: new Date(`${ds.equityLast}T00:00:00Z`), security: { assetClass: "EQUITY" } } }) : 0;
+  const lusePartial = !luseDue && latestBars < MIN_SESSION_PRICE_BARS;
   const template = ["date,symbol,open,high,low,close,volume,value,trades", ...syms.map((s) => `${expected.toISOString().slice(0, 10)},${s.symbol},,,,,,,`)].join("\n");
   const ok = pays.filter((p) => p.status === "success");
   const paid = ok.filter((p) => p.currency === "ZMW").reduce((a, p) => a + p.amount, 0);
@@ -35,19 +37,26 @@ export default async function Page() {
         <Stat label="Users" value={nUsers} />
         <Stat label="LuSE sessions stored" value={ds.equitySessions} sub={`${fmtDate(ds.equityFirst)} → ${fmtDate(ds.equityLast)}`} />
         <Stat label="Latest crypto bar" value={fmtDate(ds.cryptoLast)} />
-        {PAYMENTS_ENABLED ? <Stat label="Recent revenue" value={`K${paid.toFixed(2)}`} sub={`last 20 payments${paidStable ? ` · plus $${paidStable.toFixed(2)} in stablecoins` : ""}`} /> : <Stat label="Latest LuSE prices" value={fmtDate(ds.equityLast)} sub={luseDue ? `${fmtDate(expected)} still to upload` : "up to date"} />}
+        {PAYMENTS_ENABLED ? <Stat label="Recent revenue" value={`K${paid.toFixed(2)}`} sub={`last 20 payments${paidStable ? ` · plus $${paidStable.toFixed(2)} in stablecoins` : ""}`} /> : <Stat label="Latest LuSE prices" value={fmtDate(ds.equityLast)} sub={luseDue ? `${fmtDate(expected)} still to upload` : lusePartial ? "incomplete — paste the full page again" : "up to date"} />}
       </div>
       <Card title="Paste from the LuSE website" className="mt-4">
         <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
-          <Badge color={luseDue ? "amber" : "green"}>{luseDue ? "Upload needed" : "Up to date"}</Badge>
-          <span className="text-muted">Latest stored: {fmtDate(ds.equityLast)} · latest session expected: {fmtDate(expected)}</span>
+          <Badge color={luseDue || lusePartial ? "amber" : "green"}>{luseDue ? "Upload needed" : lusePartial ? "Incomplete upload" : "Up to date"}</Badge>
+          <span className="text-muted">Latest stored: {fmtDate(ds.equityLast)} · latest session expected: {fmtDate(expected)}{lusePartial ? ` · only ${latestBars} share prices stored` : ""}</span>
         </div>
         <ol className="mb-2 list-decimal space-y-1 pl-5 text-sm text-muted">
           <li>Open <a href="https://www.luse.co.zm/trading/market-data/" target="_blank" rel="noopener noreferrer" className="text-brand underline">LuSE Market Data</a> and check the &quot;Market Data as of&quot; date.</li>
           <li>Select the whole page (Ctrl+A, or ⌘A on a Mac) and copy it (Ctrl+C).</li>
           <li>Paste it below and save. Busongo reads the date, LASI and every share price from it. Saving the same day again overwrites it.</li>
+          <li>Optional: copy the <a href="https://www.luse.co.zm/" target="_blank" rel="noopener noreferrer" className="text-brand underline">LuSE homepage</a> into the SENS box to add the latest company announcements. A text copy has no PDF links, so those filings are stored without them.</li>
         </ol>
-        <ActionForm action={importLusePasteAction} submit="Save LuSE prices" className="space-y-2"><textarea name="page" rows={6} required className="input font-mono text-xs" placeholder={"Market Data as of\n06/11/2026\nLASI\nCurrent Value\n24646.88\n…\nSecurity\tISIN code\tClosing Price (ZMW)\t…"} /></ActionForm>
+        <ActionForm action={importLusePasteAction} submit="Save LuSE prices" className="space-y-2">
+          <textarea name="page" rows={6} required className="input font-mono text-xs" placeholder={"Market Data as of\n06/11/2026\nLASI\nCurrent Value\n24646.88\n…\nSecurity\tISIN code\tClosing Price (ZMW)\t…"} />
+          <div>
+            <label htmlFor="sens-paste" className="mb-1 block text-xs text-muted">SENS announcements (optional) — paste a copy of the LuSE homepage</label>
+            <textarea id="sens-paste" name="sens" rows={4} className="input font-mono text-xs" placeholder={"SENS DOCUMENTS\n…\nDOWNLOAD\n…\nVIEW ALL DOCUMENTS"} />
+          </div>
+        </ActionForm>
         <p className="mt-2 text-xs text-muted">Reminders: when prices are missing, GitHub opens a &quot;luse-upload&quot; issue and mentions you at 17:05 and 08:30 Lusaka time, and closes it once they&apos;re in. For older days, use the CSV import below.</p>
       </Card>
       <Card title="Ingestion" className="mt-4">
