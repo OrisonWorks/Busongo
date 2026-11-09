@@ -8,6 +8,8 @@ import { compact, fmt, fmtDate, kwacha } from "@/lib/format";
 import { LineChartBox } from "@/components/charts/LineChartBox";
 import QuoteTable from "@/components/QuoteTable";
 import DataNotice from "@/components/DataNotice";
+import PlainBox from "@/components/PlainBox";
+import Glossed from "@/components/Glossed";
 
 export const metadata = { title: "Market Terminal" };
 export const revalidate = 300;
@@ -25,9 +27,10 @@ export default async function Page() {
       <PageHeader title="Market Terminal" subtitle={`Lusaka Securities Exchange end-of-day data · ${fmtDate(l?.date)}`} />
       <MarketTabs active="/market" />
       <DataNotice need={2} />
+      <PlainBox topics={["lasi"]} />
       <BriefCard className="mb-4" />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-        <Stat label="LASI" value={fmt(l?.value)} change={l?.pctChange} />
+        <Stat label={<Glossed k="lasi" />} value={fmt(l?.value)} change={l?.pctChange} />
         <Stat label="Value traded" value={kwacha(l?.valueTraded ?? b.value, 0)} sub={`${compact(l?.volume ?? b.volume)} shares`} />
         <Stat label="Trades" value={fmt(l?.trades ?? b.trades, 0)} sub={`${b.traded} counters traded`} />
         <Stat label="Breadth" value={<><span className="text-up">{b.advances}▲</span> <span className="text-down">{b.declines}▼</span> <span className="text-muted">{b.unchanged}■</span></>} />

@@ -1,6 +1,8 @@
 import { getMacro, latestMacro } from "@/lib/market";
 import FiTabs from "@/components/FiTabs";
 import { Card, PageHeader, Stat } from "@/components/ui";
+import PlainBox from "@/components/PlainBox";
+import Glossed from "@/components/Glossed";
 import { LineChartBox } from "@/components/charts/LineChartBox";
 import { fmt, fmtDate, pct } from "@/lib/format";
 import { P2P_BUY, P2P_SELL, p2pPremium } from "@/lib/crypto-zm";
@@ -20,11 +22,12 @@ export default async function Page() {
     <div>
       <PageHeader title="Macro Dashboard" subtitle="Bank of Zambia policy rate, inflation, interbank rate and the kwacha." />
       <FiTabs active="/macro" />
+      <PlainBox topics={["dollar", "prices", "rate"]} />
       <div className="grid gap-3 sm:grid-cols-4">
-        <Stat label="Monetary policy rate" value={`${fmt(m.MPR?.value)}%`} sub={`since ${fmtDate(m.MPR?.date)}`} />
-        <Stat label="Annual inflation" value={`${fmt(m.INFLATION?.value)}%`} sub={fmtDate(m.INFLATION?.date)} />
+        <Stat label={<Glossed k="policy-rate">Monetary policy rate</Glossed>} value={`${fmt(m.MPR?.value)}%`} sub={`since ${fmtDate(m.MPR?.date)}`} />
+        <Stat label={<Glossed k="inflation">Annual inflation</Glossed>} value={`${fmt(m.INFLATION?.value)}%`} sub={fmtDate(m.INFLATION?.date)} />
         <Stat label="Overnight interbank" value={`${fmt(m.INTERBANK?.value, 4)}%`} sub={fmtDate(m.INTERBANK?.date)} />
-        <Stat label="USD/ZMW (BoZ mid)" value={fmt(m.USDZMW?.value, 4)} sub={fmtDate(m.USDZMW?.date)} />
+        <Stat label={<Glossed k="exchange-rate">USD/ZMW (BoZ mid)</Glossed>} value={fmt(m.USDZMW?.value, 4)} sub={fmtDate(m.USDZMW?.date)} />
       </div>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Card title="Monetary policy rate"><LineChartBox data={step(mpr)} x="date" lines={[{ key: "value", name: "MPR %", color: "#10b981" }]} unit="%" /></Card>

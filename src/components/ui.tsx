@@ -38,20 +38,22 @@ export function Card({ title, children, className, action }: { title?: ReactNode
   );
 }
 
-export function Stat({ label, value, sub, change }: { label: string; value: ReactNode; sub?: ReactNode; change?: number | null }) {
+export function Stat({ label, value, sub, change }: { label: ReactNode; value: ReactNode; sub?: ReactNode; change?: number | null }) {
   return (
     <div className="card p-4">
       <div className="text-xs text-muted">{label}</div>
       <div className="num mt-1 text-xl font-semibold">{value}</div>
-      {change !== undefined && <div className={clsx("num text-xs", tone(change))}>{pct(change)}</div>}
+      {change !== undefined && <div className={clsx("num text-xs", tone(change))}><Arrow v={change} />{pct(change)}</div>}
       {sub && <div className="mt-0.5 text-xs text-muted">{sub}</div>}
     </div>
   );
 }
 
 export function Chg({ v, d = 2 }: { v: number | null | undefined; d?: number }) {
-  return <span className={clsx("num", tone(v))}>{pct(v, d)}</span>;
+  return <span className={clsx("num", tone(v))}><Arrow v={v} />{pct(v, d)}</span>;
 }
+
+const Arrow = ({ v }: { v: number | null | undefined }) => (v ? <span aria-hidden="true">{v > 0 ? "▲ " : "▼ "}</span> : null);
 
 export function Badge({ children, color = "slate" }: { children: ReactNode; color?: "slate" | "green" | "red" | "amber" | "blue" }) {
   const c = { slate: "bg-slate-500/15 text-slate-300", green: "bg-emerald-500/15 text-emerald-300", red: "bg-red-500/15 text-red-300", amber: "bg-amber-500/15 text-amber-300", blue: "bg-sky-500/15 text-sky-300" }[color];
