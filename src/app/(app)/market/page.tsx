@@ -60,12 +60,19 @@ export default async function Page() {
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card title="All securities" className="lg:col-span-2"><QuoteTable rows={q} showSector={false} /></Card>
         <Card title="Latest SENS" action={<Link href="/sens" className="text-xs text-brand">All →</Link>}>
-          {sens.map((s) => (
-            <a key={s.id} href={s.url ?? "#"} target="_blank" rel="noreferrer" className="block border-b border-line/50 py-2 text-sm last:border-0 hover:text-brand">
-              <div>{s.title}</div>
-              <div className="text-xs text-muted">{s.security?.symbol ?? "LuSE"} · {fmtDate(s.date)}</div>
-            </a>
-          ))}
+          {sens.map((s) => {
+            const body = (
+              <>
+                <div>{s.title}</div>
+                <div className="text-xs text-muted">{s.security?.symbol ?? "LuSE"} · {fmtDate(s.date)}</div>
+              </>
+            );
+            return s.url ? (
+              <a key={s.id} href={s.url} target="_blank" rel="noreferrer" className="block border-b border-line/50 py-2 text-sm last:border-0 hover:text-brand">{body}</a>
+            ) : (
+              <div key={s.id} className="block border-b border-line/50 py-2 text-sm last:border-0">{body}</div>
+            );
+          })}
         </Card>
       </div>
     </div>

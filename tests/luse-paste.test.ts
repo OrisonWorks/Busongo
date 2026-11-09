@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseLuseAnnouncements, parseLusePaste } from "@/lib/ingest/luse";
+import { matchSecurity, parseLuseAnnouncements, parseLusePaste } from "@/lib/ingest/luse";
 import { expectedLuseSession } from "@/lib/luse-due";
 
 const page = [
@@ -86,5 +86,25 @@ describe("expected LuSE session", () => {
   it("skips weekends and holidays", () => {
     expect(at("2026-11-09T06:30:00Z")).toBe("2026-11-06");
     expect(at("2026-12-26T06:30:00Z")).toBe("2026-12-24");
+  });
+});
+
+describe("SENS filing → company", () => {
+  const secs = [
+    { symbol: "SHOP", name: "Shoprite Holdings Ltd" },
+    { symbol: "ZCCM-IH", name: "ZCCM Investments Holdings Plc" },
+    { symbol: "REIZUSD", name: "Real Estate Investments Zambia Plc (USD)" },
+    { symbol: "ZNCO", name: "Zambia National Commercial Bank Plc" },
+    { symbol: "ZMBF", name: "Zambeef Products Plc" },
+  ];
+  it.each([
+    ["SHOPRITE_OPERATIONAL NOTICE", "SHOP"],
+    ["ZCCM-IH Cautionary Announcement", "ZCCM-IH"],
+    ["REIZ- Further Cautionary", "REIZUSD"],
+    ["Zambeef Interim Results", "ZMBF"],
+    ["Zambia Sugar Dividend", undefined],
+    ["MFS Mandatory Offer-Results", undefined],
+  ])("%s → %s", (title, sym) => {
+    expect(matchSecurity(title, secs)?.symbol).toBe(sym);
   });
 });

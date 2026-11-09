@@ -271,13 +271,29 @@ async function saveLuse(p: ReturnType<typeof parseLuse>) {
   return { date: p.date, rows, lasi: p.lasi.value != null, bonds: p.bonds.length, sens };
 }
 
+const GENERIC_NAME_WORDS = new Set(["zambia", "zambian", "national", "real", "metal", "british", "standard"]);
+
+/** The listed company a filing title refers to, by LuSE code ("ZCCM-IH", "REIZ") or distinctive first name word ("SHOPRITE_…", "Zambeef …"). */
+export function matchSecurity<T extends { symbol: string; name: string }>(title: string, secs: T[]): T | undefined {
+  const t = title.replace(/_/g, " ");
+  const has = (w: string) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(t);
+  return (
+    secs.find((s) => has(s.symbol.replace("USD", "").split("-")[0])) ??
+    secs.find((s) => {
+      const w = s.name.split(/\s+/)[0];
+      return w.length >= 4 && !GENERIC_NAME_WORDS.has(w.toLowerCase()) && w !== s.name && has(w);
+    })
+  );
+}
+
 async function saveSens(announcements: LuseAnnouncement[]) {
-  const secs = await prisma.security.findMany({ select: { id: true, symbol: true } });
+  const secs = await prisma.security.findMany({ where: { assetClass: "EQUITY" }, select: { id: true, symbol: true, name: true } });
   for (const a of announcements) {
-    const sym = secs.find((s) => new RegExp(`\\b${s.symbol.replace("USD", "").split("-")[0]}\\b`, "i").test(a.title));
+    const sym = matchSecurity(a.title, secs);
     await prisma.announcement.upsert({
       where: { title_date: { title: a.title, date: a.date } },
-      update: { url: a.url, category: a.category },
+      // A pasted homepage has no PDF links; keep any link already stored from a scrape.
+      update: { category: a.category, ...(a.url ? { url: a.url } : {}), ...(sym ? { securityId: sym.id } : {}) },
       create: { ...a, securityId: sym?.id },
     });
   }
