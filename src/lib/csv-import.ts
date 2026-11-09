@@ -18,12 +18,13 @@ function parseDate(s: string): Date | null {
 }
 const num = (s?: string) => { if (s == null || s === "") return null; const n = Number(s.replace(/[,\sK]/g, "")); return Number.isFinite(n) ? n : null; };
 
-/** Columns: date, symbol, close (required); open, high, low, volume, value, trades (optional). Dates as YYYY-MM-DD or DD/MM/YYYY. */
+/** Columns: date, symbol, close (required; rows with a blank close are skipped); open, high, low, volume, value, trades (optional). Dates as YYYY-MM-DD or DD/MM/YYYY. */
 export async function importPrices(text: string) {
   const rows = parseCsv(text);
   const secs = new Map((await prisma.security.findMany()).map((s) => [s.symbol, s.id]));
   let ok = 0; const errors: string[] = [];
   for (const [i, r] of rows.entries()) {
+    if (!r.close?.trim()) continue;
     const sid = secs.get((r.symbol || "").toUpperCase()), date = parseDate(r.date || ""), close = num(r.close);
     if (!sid || !date || close == null) { if (errors.length < 20) errors.push(`Row ${i + 2}: ${!sid ? `unknown symbol "${r.symbol}"` : !date ? `bad date "${r.date}"` : "missing close"}`); continue; }
     const d = { open: num(r.open), high: num(r.high), low: num(r.low), close, volume: num(r.volume) ?? 0, value: num(r.value) ?? 0, trades: num(r.trades) ?? 0, source: "import" };

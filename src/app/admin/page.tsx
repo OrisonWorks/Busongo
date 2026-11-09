@@ -4,10 +4,11 @@ import ActionForm from "@/components/ActionForm";
 import { Badge, Card, PageHeader, Stat } from "@/components/ui";
 import { dataStatus } from "@/lib/market";
 import { fmtDate } from "@/lib/format";
-import { addCorporateAction, importFundamentalsAction, importPricesAction, runIngest, setPlan } from "./actions";
+import { addCorporateAction, importFundamentalsAction, importLusePasteAction, importPricesAction, runIngest, setPlan } from "./actions";
 import FundamentalsExtractor from "./FundamentalsExtractor";
 import { aiConfigured } from "@/lib/ai";
-import { WEB3_ENABLED } from "@/config/features";
+import { PAYMENTS_ENABLED, WEB3_ENABLED } from "@/config/features";
+import { expectedLuseSession } from "@/lib/luse-due";
 
 export const metadata = { title: "Admin" };
 export default async function Page() {
@@ -21,25 +22,41 @@ export default async function Page() {
     dataStatus(),
     prisma.security.findMany({ where: { assetClass: "EQUITY" }, orderBy: { symbol: "asc" }, select: { symbol: true } }),
   ]);
+  const expected = expectedLuseSession(new Date());
+  const luseDue = !ds.equityLast || ds.equityLast < expected.toISOString().slice(0, 10);
+  const template = ["date,symbol,open,high,low,close,volume,value,trades", ...syms.map((s) => `${expected.toISOString().slice(0, 10)},${s.symbol},,,,,,,`)].join("\n");
   const ok = pays.filter((p) => p.status === "success");
   const paid = ok.filter((p) => p.currency === "ZMW").reduce((a, p) => a + p.amount, 0);
   const paidStable = ok.filter((p) => p.currency !== "ZMW").reduce((a, p) => a + p.amount, 0);
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      <PageHeader title="Admin" subtitle="Data ingestion, imports, users and payments." />
+      <PageHeader title="Admin" subtitle={PAYMENTS_ENABLED ? "Data ingestion, imports, users and payments." : "LuSE uploads, data ingestion, imports and users."} />
       <div className="grid gap-3 sm:grid-cols-4">
         <Stat label="Users" value={nUsers} />
         <Stat label="LuSE sessions stored" value={ds.equitySessions} sub={`${fmtDate(ds.equityFirst)} → ${fmtDate(ds.equityLast)}`} />
         <Stat label="Latest crypto bar" value={fmtDate(ds.cryptoLast)} />
-        <Stat label="Recent revenue" value={`K${paid.toFixed(2)}`} sub={`last 20 payments${paidStable ? ` · plus $${paidStable.toFixed(2)} in stablecoins` : ""}`} />
+        {PAYMENTS_ENABLED ? <Stat label="Recent revenue" value={`K${paid.toFixed(2)}`} sub={`last 20 payments${paidStable ? ` · plus $${paidStable.toFixed(2)} in stablecoins` : ""}`} /> : <Stat label="Latest LuSE prices" value={fmtDate(ds.equityLast)} sub={luseDue ? `${fmtDate(expected)} still to upload` : "up to date"} />}
       </div>
+      <Card title="Paste from the LuSE website" className="mt-4">
+        <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+          <Badge color={luseDue ? "amber" : "green"}>{luseDue ? "Upload needed" : "Up to date"}</Badge>
+          <span className="text-muted">Latest stored: {fmtDate(ds.equityLast)} · latest session expected: {fmtDate(expected)}</span>
+        </div>
+        <ol className="mb-2 list-decimal space-y-1 pl-5 text-sm text-muted">
+          <li>Open <a href="https://www.luse.co.zm/trading/market-data/" target="_blank" rel="noopener noreferrer" className="text-brand underline">LuSE Market Data</a> and check the &quot;Market Data as of&quot; date.</li>
+          <li>Select the whole page (Ctrl+A, or ⌘A on a Mac) and copy it (Ctrl+C).</li>
+          <li>Paste it below and save. Busongo reads the date, LASI and every share price from it. Saving the same day again overwrites it.</li>
+        </ol>
+        <ActionForm action={importLusePasteAction} submit="Save LuSE prices" className="space-y-2"><textarea name="page" rows={6} required className="input font-mono text-xs" placeholder={"Market Data as of\n06/11/2026\nLASI\nCurrent Value\n24646.88\n…\nSecurity\tISIN code\tClosing Price (ZMW)\t…"} /></ActionForm>
+        <p className="mt-2 text-xs text-muted">Reminders: when prices are missing, GitHub opens a &quot;luse-upload&quot; issue and mentions you at 17:05 and 08:30 Lusaka time, and closes it once they&apos;re in. For older days, use the CSV import below.</p>
+      </Card>
       <Card title="Ingestion" className="mt-4">
-        <div className="mb-3 flex gap-2">{(["luse", "boz", "crypto", "p2p", "defi", "brief", "sens-ai", "proofs", "roadmap"] as const).filter((j) => WEB3_ENABLED || (j !== "proofs" && j !== "roadmap")).map((j) => <form key={j} action={runIngest.bind(null, j)}><button className="btn btn-ghost">{j === "brief" ? "Generate daily brief" : j === "sens-ai" ? "Summarise SENS (AI)" : j === "proofs" ? "Record market data on ledger" : j === "roadmap" ? "Record roadmap tally on ledger" : `Run ${j.toUpperCase()} now`}</button></form>)}</div>
+        <div className="mb-3 flex gap-2">{(["boz", "crypto", "p2p", "defi", "brief", "sens-ai", "proofs", "roadmap"] as const).filter((j) => WEB3_ENABLED || (j !== "proofs" && j !== "roadmap")).map((j) => <form key={j} action={runIngest.bind(null, j)}><button className="btn btn-ghost">{j === "brief" ? "Generate daily brief" : j === "sens-ai" ? "Summarise SENS (AI)" : j === "proofs" ? "Record market data on ledger" : j === "roadmap" ? "Record roadmap tally on ledger" : `Run ${j.toUpperCase()} now`}</button></form>)}</div>
         <table className="data"><thead><tr><th>Started</th><th>Source</th><th>Status</th><th>Message</th></tr></thead><tbody>{runs.map((r) => <tr key={r.id}><td>{r.startedAt.toISOString().slice(0, 16).replace("T", " ")}</td><td>{r.source}</td><td><Badge color={r.status === "ok" ? "green" : r.status === "error" ? "red" : "amber"}>{r.status}</Badge></td><td className="max-w-[480px] truncate text-xs text-muted">{r.message}</td></tr>)}</tbody></table>
       </Card>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Card title="Import price history (CSV)">
-          <p className="mb-2 text-xs text-muted">Columns: <code>date,symbol,close</code> plus optional <code>open,high,low,volume,value,trades</code>. Dates YYYY-MM-DD or DD/MM/YYYY. Existing days are overwritten.</p>
+          <p className="mb-2 text-xs text-muted">Columns: <code>date,symbol,close</code> plus optional <code>open,high,low,volume,value,trades</code>. Dates YYYY-MM-DD or DD/MM/YYYY. Existing days are overwritten; rows with a blank close are skipped. <a download="busongo-prices-template.csv" href={`data:text/csv;charset=utf-8,${encodeURIComponent(template)}`} className="text-brand underline">Download a template</a> with every LuSE symbol.</p>
           <ActionForm action={importPricesAction} submit="Import prices" className="space-y-2"><input type="file" name="file" accept=".csv,text/csv" className="input" /><textarea name="csv" rows={4} className="input font-mono text-xs" placeholder="date,symbol,close,volume&#10;2024-01-02,ZSUG,35.5,1200" /></ActionForm>
         </Card>
         <Card title="Import fundamentals (CSV)">
@@ -64,7 +81,7 @@ export default async function Page() {
         {users.map((u) => <tr key={u.id}><td>{u.email} {u.role === "ADMIN" && <Badge color="blue">admin</Badge>}</td><td>{u.name}</td><td>{u.phone}</td><td>{u.plan}</td><td>{fmtDate(u.planExpiresAt)}</td><td>{fmtDate(u.createdAt)}</td><td><form action={setPlan.bind(null, u.id)} className="flex gap-1"><select name="plan" defaultValue={u.plan} className="input w-auto py-1 text-xs"><option>FREE</option><option>ADVANCED</option><option>PRO</option></select><input name="months" type="number" defaultValue={1} className="input w-14 py-1 text-xs" /><button className="text-xs text-brand">Save</button></form></td></tr>)}
       </tbody></table></div></Card>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Card title="Payments"><table className="data"><tbody>{pays.map((p) => <tr key={p.id}><td>{fmtDate(p.createdAt)}</td><td>{p.user.email}</td><td>{p.plan}×{p.months}</td><td className="r">K{p.amount}</td><td>{p.status}</td></tr>)}</tbody></table></Card>
+        {PAYMENTS_ENABLED && <Card title="Payments"><table className="data"><tbody>{pays.map((p) => <tr key={p.id}><td>{fmtDate(p.createdAt)}</td><td>{p.user.email}</td><td>{p.plan}×{p.months}</td><td className="r">K{p.amount}</td><td>{p.status}</td></tr>)}</tbody></table></Card>}
         <Card title="Contact messages">{msgs.map((m) => <div key={m.id} className="border-b border-line/50 py-2 text-sm"><b>{m.firstName} {m.lastName}</b> &lt;{m.email}&gt; · {fmtDate(m.createdAt)}<div className="text-muted">{m.message}</div></div>)}</Card>
       </div>
     </div>

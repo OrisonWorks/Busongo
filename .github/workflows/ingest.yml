@@ -1,7 +1,7 @@
 name: Daily market data
 on:
   schedule:
-    - cron: "15 13 * * 1-5" # 15:15 Lusaka (UTC+2), after the LuSE close
+    - cron: "15 13 * * 1-5" # 15:15 Lusaka (UTC+2). LuSE prices are pasted in /admin: LuSE's site blocks GitHub's servers.
   workflow_dispatch:
 jobs:
   ingest:
@@ -12,19 +12,10 @@ jobs:
       NEAR_NETWORK: ${{ vars.NEAR_NETWORK }}
       NEAR_ACCOUNT_ID: ${{ secrets.NEAR_ACCOUNT_ID }}
       NEAR_PRIVATE_KEY: ${{ secrets.NEAR_PRIVATE_KEY }}
-      LUSE_DEBUG_DIR: luse-debug
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
       - run: npx prisma migrate deploy
-      - run: npm run ingest -- luse boz crypto p2p defi brief sens-ai proofs roadmap
-      - if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: luse-debug
-          path: luse-debug/
-          if-no-files-found: ignore
-          retention-days: 14
+      - run: npm run ingest -- boz crypto p2p defi brief sens-ai proofs roadmap

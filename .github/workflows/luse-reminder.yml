@@ -1,0 +1,55 @@
+name: LuSE upload reminder
+on:
+  schedule:
+    - cron: "5 15 * * 1-5" # 17:05 Lusaka (UTC+2): LuSE has usually posted the day's prices
+    - cron: "30 6 * * 1-6" # 08:30 Lusaka: repeat if the last session's prices are still missing
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+concurrency: luse-reminder
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - id: check
+        run: npm run luse:reminder
+      - name: Open, update or close the reminder issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DUE: ${{ steps.check.outputs.due }}
+          EXPECTED: ${{ steps.check.outputs.expected }}
+          LATEST: ${{ steps.check.outputs.latest }}
+          MENTION: ${{ vars.LUSE_REMINDER_MENTION || 'Mellorison' }}
+          SITE: ${{ vars.SITE_URL || 'https://busongo.vercel.app' }}
+        run: |
+          label=luse-upload
+          gh label create "$label" --color FBCA04 --description "Reminder to paste LuSE prices into Busongo" --force
+          open=$(gh issue list --label "$label" --state open --json number --jq '.[0].number // empty')
+          if [ "$DUE" = "true" ]; then
+            day=$(date -d "$EXPECTED" '+%A %-d %B %Y')
+            title="Upload LuSE prices for $day"
+            body=$(printf '%s\n' \
+              "@$MENTION LuSE prices for **$day** aren't on Busongo yet (latest stored: $LATEST)." \
+              "" \
+              "1. Open https://www.luse.co.zm/trading/market-data/ and check that \"Market Data as of\" shows $(date -d "$EXPECTED" '+%d/%m/%Y')." \
+              "2. Select the whole page (Ctrl+A) and copy it (Ctrl+C)." \
+              "3. Paste it into **Paste from the LuSE website** on $SITE/admin and click **Save LuSE prices**." \
+              "" \
+              "If LuSE hasn't posted that day yet, try later. This reminder repeats at 17:05 and 08:30 Lusaka time until the prices are in, then closes itself.")
+            if [ -n "$open" ]; then
+              gh issue edit "$open" --title "$title"
+              gh issue comment "$open" --body "$body"
+            else
+              gh issue create --title "$title" --label "$label" --body "$body"
+            fi
+          elif [ -n "$open" ]; then
+            gh issue close "$open" --comment "LuSE prices are up to date (latest: $LATEST)."
+          fi

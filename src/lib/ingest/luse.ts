@@ -144,9 +144,57 @@ export function parseLuse(s: Awaited<ReturnType<typeof scrapeLuse>>) {
   return { date, lasi, summary, stocks, bonds, sens };
 }
 
+const STOCK_HEADS = ["Security", "ISIN code", "Closing Price (ZMW)", "Price Change", "Trades", "Volume Traded", "Value Traded (ZMW)", "Best Bid Price", "Best Bid Quantity", "Best Ask Price", "Best Ask Quantity"];
+
+/** Tables in text copied from the LuSE Market Data page (select all, copy): tab-separated rows under a header row. Falls back to space-separated share rows when the copy lost its tabs. */
+export function tablesFromText(text: string): Record<string, string>[][] {
+  const lines = text.replace(/\r/g, "").split("\n");
+  const tables: Record<string, string>[][] = [];
+  let heads: string[] | null = null;
+  for (const line of lines) {
+    const cells = line.split("\t").map((c) => c.trim());
+    if (cells.length < 3) {
+      heads = null;
+      continue;
+    }
+    if (!heads || cells.includes("Security") || cells.includes("Maturity Date")) {
+      heads = cells;
+      tables.push([]);
+      continue;
+    }
+    const h = heads;
+    tables[tables.length - 1].push(Object.fromEntries(h.map((k, i) => [k, cells[i] ?? ""]).filter(([k]) => k)));
+  }
+  const out = tables.filter((t) => t.length);
+  if (!out.some((t) => "Security" in t[0])) {
+    const rows = lines
+      .map((l) => l.trim().match(/^([A-Z][A-Z0-9-]{1,11})\s+((?:ZM|ZA)[A-Z0-9]{10})\s+(.*)$/))
+      .filter((m): m is RegExpMatchArray => !!m)
+      .map((m) => {
+        const cells = [m[1], m[2], ...m[3].split(/\s+/)];
+        return Object.fromEntries(STOCK_HEADS.map((k, i) => [k, cells[i] ?? ""]));
+      });
+    if (rows.length) out.push(rows);
+  }
+  return out;
+}
+
+/** Parses the LuSE Market Data page as pasted by an admin. */
+export function parseLusePaste(text: string) {
+  const p = parseLuse({ body: text.replace(/\r/g, ""), tables: tablesFromText(text), home: "", sensLinks: [] });
+  if (!p.stocks.length) throw new Error("LuSE: no share prices found");
+  return p;
+}
+
 export async function ingestLuse() {
-  const raw = await scrapeLuse();
-  const p = parseLuse(raw);
+  return saveLuse(parseLuse(await scrapeLuse()));
+}
+
+export async function ingestLusePaste(text: string) {
+  return saveLuse(parseLusePaste(text));
+}
+
+async function saveLuse(p: ReturnType<typeof parseLuse>) {
   let rows = 0;
   for (const st of p.stocks) {
     const meta = LUSE_SECURITIES.find((m) => m.symbol === st.symbol);
@@ -210,5 +258,5 @@ export async function ingestLuse() {
       create: { ...a, securityId: sym?.id },
     });
   }
-  return { date: p.date, rows, bonds: p.bonds.length, sens: p.sens.length };
+  return { date: p.date, rows, lasi: p.lasi.value != null, bonds: p.bonds.length, sens: p.sens.length };
 }

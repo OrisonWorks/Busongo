@@ -21,7 +21,7 @@ Register with an address listed in `ADMIN_EMAILS` to get access to `/admin`.
 ## Data sources
 | Source | What | How |
 |---|---|---|
-| luse.co.zm | Daily equity prices, LASI, market summary, listed bonds, SENS | Headless Chromium (plain HTTP is blocked) |
+| luse.co.zm | Daily equity prices, LASI, market summary, listed bonds, SENS | Headless Chromium (plain HTTP is blocked). LuSE's site also blocks GitHub's servers, so daily prices are pasted into /admin; `.github/workflows/luse-reminder.yml` opens a GitHub issue when they're missing |
 | boz.zm JSON APIs | T-bill & bond auctions, MPR, inflation, interbank, OLF, USD/ZMW | `fetch` |
 | data-api.binance.vision | Daily crypto candles | `fetch` |
 
