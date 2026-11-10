@@ -14,31 +14,32 @@ const COLS: [Key, string, boolean][] = [
 
 export default function QuoteTable({ rows, base = "/stocks", showSector = true }: { rows: Quote[]; base?: string; showSector?: boolean }) {
   const [q, setQ] = useState("");
-  const [sort, setSort] = useState<{ k: Key; dir: 1 | -1 }>({ k: "symbol", dir: 1 });
+  const [sort, setSort] = useState<{ k: Key; dir: 1 | -1 } | null>(null);
   const cols = COLS.filter(([k]) => k !== "sector" || showSector);
   const view = useMemo(() => {
     const needle = q.trim().toLowerCase();
     const filtered = needle ? rows.filter((r) => r.symbol.toLowerCase().includes(needle) || r.name.toLowerCase().includes(needle)) : rows;
+    if (!sort) return filtered;
     const { k, dir } = sort;
     return [...filtered].sort((a, b) => {
       const av = a[k as keyof Quote] as string | number | null | undefined;
       const bv = b[k as keyof Quote] as string | number | null | undefined;
-      const an = typeof av === "number" ? av : null, bn = typeof bv === "number" ? bv : null;
-      if (an == null && bn == null) return String(av ?? "").localeCompare(String(bv ?? "")) * dir;
-      if (an == null) return 1; if (bn == null) return -1;
-      return (an - bn) * dir;
+      const aEmpty = av == null || av === "", bEmpty = bv == null || bv === "";
+      if (aEmpty && bEmpty) return 0;
+      if (aEmpty) return 1; if (bEmpty) return -1;
+      return typeof av === "number" && typeof bv === "number" ? (av - bv) * dir : String(av).localeCompare(String(bv)) * dir;
     });
   }, [rows, q, sort]);
-  const onSort = (k: Key) => setSort((s) => s.k === k ? { k, dir: (s.dir * -1) as 1 | -1 } : { k, dir: k === "symbol" || k === "name" || k === "sector" ? 1 : -1 });
+  const onSort = (k: Key) => setSort((s) => s != null && s.k === k ? { k, dir: (s.dir * -1) as 1 | -1 } : { k, dir: k === "symbol" || k === "name" || k === "sector" ? 1 : -1 });
   return (
     <div>
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter by symbol or name…" aria-label="Filter stocks" className="input mb-2 w-full max-w-xs" />
       <div className="overflow-x-auto">
         <table className="data">
           <thead><tr>{cols.map(([k, l, r]) => (
-            <th key={k} className={r ? "r" : ""} aria-sort={sort.k === k ? (sort.dir === 1 ? "ascending" : "descending") : undefined}>
+            <th key={k} className={r ? "r" : ""} aria-sort={sort?.k === k ? (sort?.dir === 1 ? "ascending" : "descending") : undefined}>
               <button type="button" onClick={() => onSort(k)} className="inline-flex items-center gap-1 hover:text-fg">
-                {l}{sort.k === k && <span aria-hidden>{sort.dir === 1 ? "▲" : "▼"}</span>}
+                {l}{sort?.k === k && <span aria-hidden>{sort?.dir === 1 ? "▲" : "▼"}</span>}
               </button>
             </th>
           ))}</tr></thead>
