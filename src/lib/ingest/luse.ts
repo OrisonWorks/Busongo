@@ -209,7 +209,8 @@ export async function ingestLusePaste(text: string) {
 export async function ingestLuseAnnouncementsPaste(text: string) {
   const sens = parseLuseAnnouncements(text);
   if (!sens.length) throw new Error("LuSE: no SENS announcements found — copy the homepage (luse.co.zm) and paste it here");
-  return { sens: await saveSens(sens) };
+  const r = await saveSens(sens);
+  return { sens: r.announcements, actions: r.actions };
 }
 
 async function saveLuse(p: ReturnType<typeof parseLuse>) {
@@ -267,7 +268,7 @@ async function saveLuse(p: ReturnType<typeof parseLuse>) {
   for (const b of p.bonds) {
     await prisma.listedBond.upsert({ where: { isin: b.isin }, update: b, create: { ...b, kind: "corporate" } });
   }
-  const sens = await saveSens(p.sens);
+  const { announcements: sens } = await saveSens(p.sens);
   return { date: p.date, rows, lasi: p.lasi.value != null, bonds: p.bonds.length, sens };
 }
 
@@ -286,8 +287,21 @@ export function matchSecurity<T extends { symbol: string; name: string }>(title:
   );
 }
 
+/** The corporate action a filing title announces, or null for plain news (results, cautionaries, notices). */
+export function corpActionType(title: string): string | null {
+  const t = title.toLowerCase();
+  if (/dividend|distribution/.test(t)) return "DIVIDEND";
+  if (/rights issue|bonus issue|capitali[sz]ation issue|scrip/.test(t)) return "RIGHTS_OR_BONUS";
+  if (/mandatory offer|takeover|acquisition offer|cash offer|scheme of arrangement/.test(t)) return "OFFER";
+  if (/share split|sub-?division|consolidation of shares/.test(t)) return "SPLIT";
+  if (/delist|listing of|suspension|resumption/.test(t)) return "LISTING";
+  if (/annual general meeting|\bagm\b|general meeting/.test(t)) return "MEETING";
+  return null;
+}
+
 async function saveSens(announcements: LuseAnnouncement[]) {
   const secs = await prisma.security.findMany({ where: { assetClass: "EQUITY" }, select: { id: true, symbol: true, name: true } });
+  let actions = 0;
   for (const a of announcements) {
     const sym = matchSecurity(a.title, secs);
     await prisma.announcement.upsert({
@@ -296,6 +310,14 @@ async function saveSens(announcements: LuseAnnouncement[]) {
       update: { category: a.category, ...(a.url ? { url: a.url } : {}), ...(sym ? { securityId: sym.id } : {}) },
       create: { ...a, securityId: sym?.id },
     });
+    const type = sym && corpActionType(a.title);
+    if (type) {
+      const exists = await prisma.corporateAction.findFirst({ where: { securityId: sym.id, type, announced: a.date } });
+      if (!exists) {
+        await prisma.corporateAction.create({ data: { securityId: sym.id, type, announced: a.date, notes: a.title, source: "sens-paste" } });
+        actions++;
+      }
+    }
   }
-  return announcements.length;
+  return { announcements: announcements.length, actions };
 }

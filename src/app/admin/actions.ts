@@ -46,7 +46,7 @@ export async function importLusePasteAction(_: FormState, fd: FormData): Promise
     if (sensText) {
       try {
         const s = await ingestLuseAnnouncementsPaste(sensText);
-        sensNote = ` ${s.sens} SENS announcement${s.sens === 1 ? "" : "s"} saved.`;
+        sensNote = ` ${s.sens} SENS announcement${s.sens === 1 ? "" : "s"} saved${s.actions ? `, ${s.actions} corporate action${s.actions === 1 ? "" : "s"} filed` : ""}.`;
       } catch (e) {
         sensNote = ` SENS paste failed: ${e instanceof Error ? e.message : e}`;
       }
