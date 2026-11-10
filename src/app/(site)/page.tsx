@@ -41,6 +41,8 @@ export default async function Home() {
               <Link href="/register" className="btn btn-primary px-6 py-3 text-base">Start free</Link>
               <Link href="/backtester" className="btn btn-ghost px-6 py-3 text-base">Try the backtester</Link>
             </div>
+            <div className="mt-3"><Link href="/learn" className="text-sm text-brand underline-offset-4 hover:underline">New to investing? Learn how shares work →</Link>
+            </div>
             <div className="mt-8 flex gap-8 text-sm text-muted">
               <div><div className="text-2xl font-bold text-fg">{quotes.length}</div>LuSE securities</div>
               <div><div className="text-2xl font-bold text-fg">20+</div>indicators</div>
