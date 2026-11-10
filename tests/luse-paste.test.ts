@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchSecurity, parseLuseAnnouncements, parseLusePaste } from "@/lib/ingest/luse";
+import { corpActionType, matchSecurity, parseLuseAnnouncements, parseLusePaste } from "@/lib/ingest/luse";
 import { expectedLuseSession } from "@/lib/luse-due";
 
 const page = [
@@ -107,4 +107,19 @@ describe("SENS filing → company", () => {
   ])("%s → %s", (title, sym) => {
     expect(matchSecurity(title, secs)?.symbol).toBe(sym);
   });
+});
+
+describe("corpActionType", () => {
+  const cases: [string, string | null][] = [
+    ["Zambeef Products Plc – Declaration of Final Dividend", "DIVIDEND"],
+    ["CEC – Dividend distribution notice", "DIVIDEND"],
+    ["Shoprite Holdings – Mandatory Offer to minorities", "OFFER"],
+    ["ZCCM-IH – Cautionary Announcement", null],
+    ["ZANACO – Interim Financial Results", null],
+    ["Airtel – Rights Issue circular", "RIGHTS_OR_BONUS"],
+    ["Madison Financial – Annual General Meeting notice", "MEETING"],
+    ["Copperbelt Energy – Share split approved", "SPLIT"],
+    ["Real Estate Investments Zambia – Delisting update", "LISTING"],
+  ];
+  it.each(cases)("classifies %s", (title, want) => expect(corpActionType(title)).toBe(want));
 });
