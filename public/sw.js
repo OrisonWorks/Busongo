@@ -1,5 +1,5 @@
 // Busongo offline support: keeps public pages you have opened, so they still load with no signal.
-const V = "v1";
+const V = "v2";
 const PAGES = `pages-${V}`;
 const ASSETS = `assets-${V}`;
 const PRECACHE = ["/kwacha-today", "/lite", "/offline"];
@@ -32,7 +32,7 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
 
   // Build files never change once published.
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
+  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname === "/logo.png") {
     e.respondWith(
       caches.match(req).then((hit) => hit || fetch(req).then((res) => {
         if (res.ok) { const copy = res.clone(); caches.open(ASSETS).then((c) => c.put(req, copy)); }
