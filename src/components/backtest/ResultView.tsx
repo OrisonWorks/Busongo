@@ -6,7 +6,12 @@ import PriceChart from "@/components/charts/PriceChart";
 import ExplainButton from "@/components/ai/ExplainButton";
 import { LineChartBox } from "@/components/charts/LineChartBox";
 import { fmt, pct, tone } from "@/lib/format";
+import Glossed from "@/components/Glossed";
 
+const GLOSS: Record<string, "yield" | "drawdown" | "sharpe" | "sortino" | "calmar" | "winrate" | "profitfactor" | "expectancy" | "exposure" | "pnl" | "tbill" | "cagr"> = {
+  totalReturn: "yield", cagr: "cagr", maxDrawdown: "drawdown", sharpe: "sharpe", sortino: "sortino", calmar: "calmar",
+  winRate: "winrate", profitFactor: "profitfactor", expectancy: "expectancy", exposure: "exposure", riskFreeReturn: "tbill",
+};
 const M: [string, string, (v: number | null) => string][] = [
   ["totalReturn", "Total return", (v) => pct(v)], ["cagr", "CAGR", (v) => pct(v)], ["maxDrawdown", "Max drawdown", (v) => pct(v)], ["sharpe", "Sharpe", (v) => fmt(v)],
   ["sortino", "Sortino", (v) => fmt(v)], ["calmar", "Calmar", (v) => fmt(v)], ["trades", "Trades", (v) => fmt(v, 0)], ["winRate", "Win rate", (v) => (v == null ? "—" : `${v.toFixed(1)}%`)],
@@ -29,7 +34,7 @@ export default function ResultView({ res, signedIn }: { res: RunResponse; signed
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 2xl:grid-cols-8">
             {M.map(([k, l, f]) => (
               <div key={k} className="card min-w-0 p-3">
-                <div className="text-[11px] text-muted">{l}</div>
+                <div className="text-[11px] text-muted">{GLOSS[k] ? <Glossed k={GLOSS[k]}>{l}</Glossed> : l}</div>
                 <div className={`num font-semibold ${["totalReturn", "cagr", "benchmarkReturn", "expectancy"].includes(k) ? tone(r.metrics[k]) : ""}`}>{f(r.metrics[k] ?? null)}</div>
               </div>
             ))}
@@ -53,7 +58,7 @@ export default function ResultView({ res, signedIn }: { res: RunResponse; signed
       )}
       {r.perSymbol.length > 1 && (
         <div className="card overflow-x-auto p-4"><div className="mb-2 text-sm font-semibold">By symbol</div>
-          <table className="data"><thead><tr><th>Symbol</th><th className="r">Trades</th><th className="r">P&L (K)</th><th className="r">Win rate</th></tr></thead>
+          <table className="data"><thead><tr><th>Symbol</th><th className="r">Trades</th><th className="r"><Glossed k="pnl">P&L (K)</Glossed></th><th className="r"><Glossed k="winrate">Win rate</Glossed></th></tr></thead>
             <tbody>{r.perSymbol.map((p) => <tr key={p.symbol}><td>{p.symbol}</td><td className="r">{p.trades}</td><td className={`num r ${tone(p.pnl)}`}>{fmt(p.pnl)}</td><td className="r">{p.winRate == null ? "—" : p.winRate.toFixed(0) + "%"}</td></tr>)}</tbody></table>
         </div>
       )}
