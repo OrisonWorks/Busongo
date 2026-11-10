@@ -11,6 +11,7 @@ import { ccy, compact, fmt, fmtDate, fmtInt } from "@/lib/format";
 import { Series } from "@/lib/engine/series";
 import { pivots } from "@/lib/indicators";
 import { valuation } from "@/lib/fundamentals";
+import { dailyReturns, maxDrawdown, stats as cmpStats } from "@/lib/compare";
 import { CRYPTO_ENABLED } from "@/config/features";
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }) {
@@ -78,6 +79,15 @@ export default async function Page({ params }: { params: Promise<{ symbol: strin
             {[["1 week", 5], ["1 month", 21], ["3 months", 63], ["6 months", 126], ["1 year", 252], ["3 years", 756]].map(([l, n]) => <tr key={l}><td>{l}</td><td className="r"><Chg v={ret(n as number)} /></td></tr>)}
             {!crypto && lasi.length > 1 && <tr><td className="text-muted">LASI (all stored)</td><td className="r"><Chg v={(lasi.at(-1)!.value / lasi[0].value - 1) * 100} /></td></tr>}
           </tbody></table>
+        </Card>
+        <Card title="Risk">
+          {(() => { const st = cmpStats(bars.map((b) => ({ date: String(b.date).slice(0, 10), close: b.close, value: b.value })), crypto ? [] : dailyReturns(lasi.map((b) => b.value))); return (
+            <table className="data"><tbody>
+              <tr><td>Volatility (annual)</td><td className="num r">{fmt(st.volatility, 1)}%</td></tr>
+              <tr><td>Worst fall</td><td className="num r">{fmt(st.maxDrawdown ?? maxDrawdown(bars.map((b) => b.close)), 1)}%</td></tr>
+              <tr><td>Avg day value</td><td className="num r">{compact(st.avgValue)}</td></tr>
+              {!crypto && <tr><td>Beta vs LASI</td><td className="num r">{fmt(st.beta)}</td></tr>}
+            </tbody></table> ); })()}
         </Card>
         <Card title="Technicals">
           <table className="data"><tbody>{tech.map(([l, x]) => <tr key={l}><td>{l}</td><td className="num r">{fmt(x)}</td></tr>)}</tbody></table>
