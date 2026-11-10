@@ -6,6 +6,7 @@ import { getUser } from "@/lib/auth";
 import { Badge, Card, Chg, PageHeader, Stat } from "@/components/ui";
 import PriceChart from "@/components/charts/PriceChart";
 import WatchButton from "@/components/WatchButton";
+import Glossed from "@/components/Glossed";
 import AlertForm from "@/components/AlertForm";
 import { ccy, compact, fmt, fmtDate, fmtInt } from "@/lib/format";
 import { Series } from "@/lib/engine/series";
@@ -56,19 +57,19 @@ export default async function Page({ params }: { params: Promise<{ symbol: strin
       <PageHeader
         crumbs={[crypto && !CRYPTO_ENABLED ? { href: "/backtester", label: "Backtester" } : { href: base, label: crypto ? "Crypto" : "Stocks" }]}
         title={`${sec.symbol} · ${sec.name}`}
-        subtitle={<span className="flex flex-wrap gap-2">{sec.sector && <Badge>{sec.sector}</Badge>}{sec.board && !crypto && <Badge color="blue">{sec.board} Board</Badge>}{sec.isin && <Badge>{sec.isin}</Badge>}<Badge color="amber">{sec.currency}</Badge></span>}
+        subtitle={<span className="flex flex-wrap items-center gap-2"><span className="w-full text-sm font-normal text-muted">Live price, chart, company facts and announcements for this LuSE share.</span>{sec.sector && <Badge>{sec.sector}</Badge>}{sec.board && !crypto && <Badge color="blue">{sec.board} Board</Badge>}{sec.isin && <Badge>{sec.isin}</Badge>}<Badge color="amber">{sec.currency}</Badge></span>}
       >
         <WatchButton symbol={sec.symbol} initial={watching} signedIn={!!user} />
         <Link href={`/backtester?symbol=${sec.symbol}`} className="btn btn-primary">Backtest {sec.symbol}</Link>
       </PageHeader>
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label={`Close · ${fmtDate(last?.date)}`} value={ccy(sec.currency, last?.close)} change={last && prev ? (last.close / prev.close - 1) * 100 : raw?.change != null && last ? (raw.change / (last.close - raw.change)) * 100 : null} />
-        <Stat label="Volume" value={compact(last?.volume)} sub={`${fmtInt(last?.trades)} trades`} />
+        <Stat label={<Glossed k="volume">Volume</Glossed>} value={compact(last?.volume)} sub={`${fmtInt(last?.trades)} trades`} />
         <Stat label="Value traded" value={ccy(sec.currency, last?.value, 0)} />
         <Stat label="52-week range" value={`${fmt(lo52)} – ${fmt(hi52)}`} sub={`${bars.length} sessions stored`} />
-        <Stat label="Best bid / ask" value={`${raw?.bidPrice ?? "—"} / ${raw?.askPrice ?? "—"}`} sub={raw?.bidQty || raw?.askQty ? `${compact(raw?.bidQty)} / ${compact(raw?.askQty)}` : undefined} />
+        <Stat label={<Glossed k="bidask">Best bid / ask</Glossed>} value={`${raw?.bidPrice ?? "—"} / ${raw?.askPrice ?? "—"}`} sub={raw?.bidQty || raw?.askQty ? `${compact(raw?.bidQty)} / ${compact(raw?.askQty)}` : undefined} />
         {fx ? <Stat label="Price in kwacha" value={fx.USDZMW && last ? `K${fmt(last.close * fx.USDZMW.value)}` : "—"} sub={fx.P2P_USDT_ZMW_BUY && last ? `P2P: K${fmt(last.close * fx.P2P_USDT_ZMW_BUY.value)} · BoZ K${fmt(fx.USDZMW?.value, 2)}/$` : `BoZ K${fmt(fx.USDZMW?.value, 2)}/$`} /> : null}
-        {!fx && <Stat label="P/E · Div. yield" value={`${fmt(v.pe, 1)} · ${fmt(v.divYield, 1)}%`} sub={funds[0] ? `FY${funds[0].fiscalYear}` : "No filings loaded"} />}
+        {!fx && <Stat label={<><Glossed k="pe">P/E</Glossed> · <Glossed k="divyield">Div. yield</Glossed></>} value={`${fmt(v.pe, 1)} · ${fmt(v.divYield, 1)}%`} sub={funds[0] ? `FY${funds[0].fiscalYear}` : "No filings loaded"} />}
       </div>
       <Card className="mt-4" title="Price chart" action={<span className="text-xs text-muted">{crypto ? "Daily OHLC" : "Close-to-close candles"} · SMA 20 / 50</span>}>
         {bars.length > 1 ? <PriceChart bars={bars} overlays={[{ name: "SMA20", color: "#38bdf8", data: sma(20) }, { name: "SMA50", color: "#f59e0b", data: sma(50) }]} /> : <div className="py-20 text-center text-sm text-muted">Only {bars.length} session stored so far. The chart fills in as daily data accumulates.</div>}
@@ -83,10 +84,10 @@ export default async function Page({ params }: { params: Promise<{ symbol: strin
         <Card title="Risk">
           {(() => { const st = cmpStats(bars.map((b) => ({ date: String(b.date).slice(0, 10), close: b.close, value: b.value })), crypto ? [] : dailyReturns(lasi.map((b) => b.value))); return (
             <table className="data"><tbody>
-              <tr><td>Volatility (annual)</td><td className="num r">{fmt(st.volatility, 1)}%</td></tr>
-              <tr><td>Worst fall</td><td className="num r">{fmt(st.maxDrawdown ?? maxDrawdown(bars.map((b) => b.close)), 1)}%</td></tr>
+              <tr><td><Glossed k="volatility">Volatility (annual)</Glossed></td><td className="num r">{fmt(st.volatility, 1)}%</td></tr>
+              <tr><td><Glossed k="drawdown">Worst fall</Glossed></td><td className="num r">{fmt(st.maxDrawdown ?? maxDrawdown(bars.map((b) => b.close)), 1)}%</td></tr>
               <tr><td>Avg day value</td><td className="num r">{compact(st.avgValue)}</td></tr>
-              {!crypto && <tr><td>Beta vs LASI</td><td className="num r">{fmt(st.beta)}</td></tr>}
+              {!crypto && <tr><td><Glossed k="beta">Beta vs LASI</Glossed></td><td className="num r">{fmt(st.beta)}</td></tr>}
             </tbody></table> ); })()}
         </Card>
         <Card title="Technicals">

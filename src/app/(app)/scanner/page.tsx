@@ -17,7 +17,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
   const init = scans.find((s) => s.id === saved)?.config as SavedScanConfig | undefined;
   return (
     <div>
-      <PageHeader title="Scanner" subtitle="Scan every LuSE stock or crypto for technical setups on the latest session. Combine conditions with AND/OR." />
+      <PageHeader title="Scanner" subtitle="Find LuSE shares matching rules you pick (e.g. price above its average, rising volume) on the latest trading session — no code needed." />
       <DataNotice />
       <Scanner key={saved} sectors={sectors.map((s) => s.sector!).sort()} signedIn={!!user} watchSymbols={watch.map((w) => w.symbol)} initial={init} />
       {scans.length > 0 && <Card title="My saved scans" className="mt-4">{scans.map((s) => <Link key={s.id} href={`/scanner?saved=${s.id}`} className="mr-2 inline-block rounded bg-panel2 px-3 py-1 text-sm hover:text-brand">{s.name}</Link>)}</Card>}

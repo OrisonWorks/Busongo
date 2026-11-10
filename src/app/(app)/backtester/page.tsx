@@ -12,7 +12,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
   const s = strategy && user ? await prisma.strategy.findFirst({ where: { id: strategy, userId: user.id, kind: "basic" } }) : null;
   return (
     <div>
-      <PageHeader title="Basic Backtester" subtitle="Test a proven strategy template on any LuSE stock or crypto in seconds — no code needed.">
+      <PageHeader title="Basic Backtester" subtitle="Pick a strategy and see how it would have done on old LuSE prices — research only; past results never guarantee future ones.">
         <Link href="/backtester/advanced" className="btn btn-ghost">Advanced backtester →</Link>
       </PageHeader>
       <DataNotice />
