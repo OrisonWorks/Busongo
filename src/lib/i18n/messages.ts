@@ -107,6 +107,8 @@ const en = {
   "g.yieldcurve.def": "A line showing the yearly return for each loan length, from 3 months to 15 years.",
   "g.backtest.term": "Backtest",
   "g.backtest.def": "Replaying a strategy on old prices to see how it would have done. Past results never guarantee future ones.",
+  "g.pnl.term": "P&L (profit and loss)",
+  "g.pnl.def": "What you actually gained or lost — money in your pocket after fees, not just price moves.",
 };
 export type Key = keyof typeof en;
 type Dict = Partial<Record<Key, string>>;

@@ -24,7 +24,7 @@ export default async function Page() {
   };
   return (
     <div>
-      <PageHeader title="My Strategies" subtitle={WEB3_ENABLED ? "Saved strategies and your recent backtest runs. Record one on the Busongo Ledger to fix its fingerprint publicly, so it can be shared as a tamper-evident track record." : "Saved strategies and your recent backtest runs."} />
+      <PageHeader title="My Strategies" subtitle={WEB3_ENABLED ? "Trading rules you saved and their test runs on old prices. Record one on the Busongo Ledger to lock in a public, tamper-evident fingerprint of it." : "Trading rules you saved and their test runs on old prices."} />
       <Card title="Saved strategies">
         {strats.length ? <div className="overflow-x-auto"><table className="data"><thead><tr><th>Name</th><th>Type</th><th>Symbols</th><th>Saved</th><th></th></tr></thead><tbody>
           {strats.map((s) => { const c = s.config as { symbols?: string[] }; return <tr key={s.id}><td className="font-medium">{s.name}</td><td>{s.kind}</td><td>{c.symbols?.join(", ")}</td><td>{fmtDate(s.updatedAt)}</td><td><Link className="text-brand" href={s.kind === "advanced" ? `/backtester/advanced?strategy=${s.id}` : `/backtester?strategy=${s.id}`}>Open</Link><Prove id={s.id} act={proveStrategy} /></td></tr>; })}

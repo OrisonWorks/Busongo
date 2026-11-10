@@ -14,7 +14,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ a
   const q = (a: string, t: string) => `/tools/pivots?asset=${a}&tf=${t}`;
   return (
     <div>
-      <PageHeader title="Pivot Levels" subtitle="Classic floor-trader pivots from the last session, week or month." />
+      <PageHeader title="Pivot Levels" subtitle="Price levels traders watch as possible turning points, worked out from the last session, week or month." />
       <ToolTabs active="/tools/pivots" />
       <div className="mb-3 flex flex-wrap gap-2 text-sm">{["EQUITY", "CRYPTO"].map((a) => <Link key={a} href={q(a, tf)} className={`btn ${asset === a ? "btn-primary" : "btn-ghost"}`}>{a === "EQUITY" ? "LuSE" : "Crypto"}</Link>)}{["daily", "weekly", "monthly"].map((t) => <Link key={t} href={q(asset, t)} className={`btn ${tf === t ? "btn-primary" : "btn-ghost"}`}>{t}</Link>)}</div>
       <Card><div className="overflow-x-auto"><table className="data"><thead><tr><th>Symbol</th><th className="r">Close</th>{["S3", "S2", "S1", "Pivot", "R1", "R2", "R3"].map((h) => <th key={h} className="r">{h}</th>)}</tr></thead>

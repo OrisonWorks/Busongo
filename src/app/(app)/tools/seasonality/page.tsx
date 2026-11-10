@@ -20,7 +20,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
   const years = [...new Set(rets.map((r) => r.y))];
   return (
     <div>
-      <PageHeader title="Seasonality" subtitle="Average return and hit-rate for each calendar month." />
+      <PageHeader title="Seasonality" subtitle="Which months have historically been kind or cruel to a share — averages only, never a promise." />
       <ToolTabs active="/tools/seasonality" />
       <SymbolPicker symbols={syms} value={symbol} />
       <Card title={`${symbol} average monthly return`}><BarChartBox data={avg} x="m" bars={[{ key: "avg", name: "Avg %", color: "#10b981" }]} unit="%" /></Card>

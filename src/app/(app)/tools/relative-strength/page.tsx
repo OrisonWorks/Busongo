@@ -13,7 +13,7 @@ export default async function Page() {
   const rows = [...data].map(([s, b]) => ({ s, rets: W.map(([n]) => r(b.map((x) => x.close), n)) })).sort((a, b) => (b.rets[2] ?? -1e9) - (a.rets[2] ?? -1e9));
   return (
     <div>
-      <PageHeader title="Relative Strength" subtitle="Returns over each window and outperformance against the LASI." />
+      <PageHeader title="Relative Strength" subtitle="Which shares are doing better than the market average (LASI) over different periods." />
       <ToolTabs active="/tools/relative-strength" />
       <DataNotice need={63} />
       <Card><table className="data"><thead><tr><th>Symbol</th>{W.map(([, l]) => <th key={l} className="r">{l}</th>)}{W.map(([, l]) => <th key={"x" + l} className="r">vs LASI {l}</th>)}</tr></thead>

@@ -15,7 +15,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ a
   const bg = (c: number | null) => (c == null ? "transparent" : c >= 0 ? `rgba(16,185,129,${Math.abs(c) * 0.8})` : `rgba(239,68,68,${Math.abs(c) * 0.8})`);
   return (
     <div>
-      <PageHeader title="Correlation Matrix" subtitle="Correlation of daily returns over the last year. Low or negative correlations improve diversification." />
+      <PageHeader title="Correlation Matrix" subtitle="Which shares move together and which don't over the past year — picking ones that don't match spreads your risk." />
       <ToolTabs active="/tools/correlation" />
       <div className="mb-3 flex gap-2">{["CRYPTO", "EQUITY"].map((a) => <Link key={a} href={`/tools/correlation?asset=${a}`} className={`btn ${asset === a ? "btn-primary" : "btn-ghost"}`}>{a === "EQUITY" ? "LuSE" : "Crypto"}</Link>)}</div>
       {asset === "EQUITY" && <DataNotice need={30} />}
