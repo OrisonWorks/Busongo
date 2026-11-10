@@ -4,8 +4,16 @@ import { useEffect, useId, useRef, useState } from "react";
 /** A jargon word that shows a plain explanation when tapped. */
 export default function Term({ children, title, def }: { children: React.ReactNode; title: string; def: string }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ left: 0, top: 0 });
   const id = useId();
   const ref = useRef<HTMLSpanElement>(null);
+  const toggle = () => {
+    if (!open && ref.current) {
+      const r = ref.current.getBoundingClientRect();
+      setPos({ left: Math.max(8, Math.min(r.left, window.innerWidth - 264)), top: r.bottom + 4 });
+    }
+    setOpen(!open);
+  };
   useEffect(() => {
     if (!open) return;
     const close = (e: Event) => {
@@ -17,11 +25,11 @@ export default function Term({ children, title, def }: { children: React.ReactNo
   }, [open]);
   return (
     <span ref={ref} className="relative inline-block">
-      <button type="button" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)} className="cursor-help underline decoration-dotted underline-offset-4 hover:text-brand">
+      <button type="button" aria-expanded={open} aria-controls={id} onClick={toggle} className="cursor-help underline decoration-dotted underline-offset-4 hover:text-brand">
         {children}
       </button>
       {open && (
-        <span id={id} role="note" className={`absolute top-full z-30 mt-1 block w-64 max-w-[85vw] rounded-lg border border-line bg-panel2 p-3 text-left text-xs font-normal normal-case leading-relaxed text-fg shadow-xl ${ref.current && ref.current.getBoundingClientRect().left + 256 > window.innerWidth ? "right-0" : "left-0"}`}>
+        <span id={id} role="note" style={pos} className="fixed z-30 block w-64 max-w-[85vw] rounded-lg border border-line bg-panel2 p-3 text-left text-xs font-normal normal-case leading-relaxed text-fg shadow-xl">
           <b className="mb-1 block">{title}</b>{def}
         </span>
       )}
