@@ -13,9 +13,10 @@ export default function ShareButton({ text, image, file, label }: { text: string
       const blob = await (await fetch(image)).blob();
       const files = [new File([blob], file, { type: blob.type || "image/png" })];
       if (navigator.canShare({ files })) await navigator.share({ files, text });
-      else window.open(wa, "_blank", "noopener");
+      // Same-tab navigation needs no click activation, so it can't be popup-blocked after a slow image fetch.
+      else window.location.href = wa;
     } catch (err) {
-      if ((err as Error)?.name !== "AbortError") window.open(wa, "_blank", "noopener");
+      if ((err as Error)?.name !== "AbortError") window.location.href = wa;
     } finally {
       setBusy(false);
     }
