@@ -26,6 +26,7 @@ export default function Footer() {
           <div className="mb-2 text-sm font-semibold">Company</div>
           {RESOURCES.map((i) => <Link key={i.href} href={i.href} className="block py-0.5 text-sm text-muted hover:text-fg">{i.label}</Link>)}
           {PAYMENTS_ENABLED && <Link href="/pricing" className="block py-0.5 text-sm text-muted hover:text-fg">Pricing</Link>}
+          <a href="/lite" className="block py-0.5 text-sm text-muted hover:text-fg">Text-only Kwacha Today</a>
           <Link href="/terms" className="block py-0.5 text-sm text-muted hover:text-fg">Terms</Link>
           <Link href="/privacy" className="block py-0.5 text-sm text-muted hover:text-fg">Privacy</Link>
           {PAYMENTS_ENABLED && <Link href="/refund" className="block py-0.5 text-sm text-muted hover:text-fg">Refund policy</Link>}
