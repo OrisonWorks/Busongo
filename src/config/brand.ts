@@ -8,6 +8,7 @@ export const brand = {
   email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "mellorison@gmail.com",
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP || "+260955646446",
   address: process.env.NEXT_PUBLIC_ADDRESS || "Lusaka, Zambia",
+  org: process.env.NEXT_PUBLIC_ORG_NAME || "OrisonWorks",
   currency: "ZMW",
   currencySymbol: "K",
 };
