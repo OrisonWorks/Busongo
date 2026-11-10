@@ -6,15 +6,17 @@ import { prisma } from "@/lib/db";
 import { getQuotes, latestMacro } from "@/lib/market";
 import { valuation } from "@/lib/fundamentals";
 import { Card, Notice, PageHeader } from "@/components/ui";
+import Glossed from "@/components/Glossed";
 import { compact, fmt } from "@/lib/format";
 
 export const metadata = { title: "Fundamentals Screener" };
 const COLS = [["pe", "P/E", 1], ["pb", "P/B", 2], ["divYield", "Div yield %", 2], ["roe", "ROE %", 1], ["netMargin", "Net margin %", 1], ["debtToEquity", "D/E", 2], ["payout", "Payout %", 0]] as const;
+const TERM = { "P/E": "pe", "P/B": "pb", "Div yield %": "divyield", "ROE %": "roe", "Mkt cap": "marketcap" } as const;
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const viewer = await getUser();
   if (!planAtLeast(viewer?.effectivePlan ?? effectivePlan(null), "ADVANCED")) return (
     <div>
-      <PageHeader title="Fundamentals Screener" subtitle="Valuation, profitability and leverage for LuSE companies, from published annual results." />
+      <PageHeader title="Fundamentals Screener" subtitle="What each LuSE company earns and owns, from its published yearly results — and whether its share price looks high or low against that." />
       <PlanLock min="ADVANCED" feature="Fundamentals screener tools" signedIn={!!viewer} />
     </div>
   );
@@ -33,7 +35,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const covered = secs.filter((s) => s.fundamentals.length).length;
   return (
     <div>
-      <PageHeader title="Fundamentals Screener" subtitle="Valuation, profitability and leverage for LuSE companies, from published annual results." />
+      <PageHeader title="Fundamentals Screener" subtitle="What each LuSE company earns and owns, from its published yearly results — and whether its share price looks high or low against that." />
       {covered < secs.length && <Notice>Financial statements are loaded for {covered} of {secs.length} companies. The rest are added from SENS results announcements as they are captured.</Notice>}
       <form className="card mb-4 flex flex-wrap items-end gap-2 p-3">
         <div><label className="label">Max P/E</label><input name="maxPe" defaultValue={sp.maxPe} type="number" step="any" className="input w-28" /></div>
@@ -42,7 +44,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
         <div><label className="label">Sort by</label><select name="sort" defaultValue={sort} className="input"><option value="marketCap">Market cap</option>{COLS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
         <button className="btn btn-primary">Screen</button>
       </form>
-      <Card><div className="overflow-x-auto"><table className="data"><thead><tr><th>Symbol</th><th>Sector</th><th className="r">Price</th><th className="r">Mkt cap</th>{COLS.map(([k, l]) => <th key={k} className="r">{l}</th>)}<th>FY</th></tr></thead>
+      <Card><div className="overflow-x-auto"><table className="data"><thead><tr><th>Symbol</th><th>Sector</th><th className="r">Price</th><th className="r"><Glossed k="marketcap">Mkt cap</Glossed></th>{COLS.map(([k, l]) => <th key={k} className="r">{TERM[l as keyof typeof TERM] ? <Glossed k={TERM[l as keyof typeof TERM]}>{l}</Glossed> : l}</th>)}<th>FY</th></tr></thead>
         <tbody>{rows.map(({ s, f, v }) => <tr key={s.id}><td><Link href={`/fundamentals/${s.symbol}`} className="font-semibold text-brand">{s.symbol}</Link></td><td className="text-muted">{s.sector}</td><td className="num r">{fmt(px.get(s.symbol))}</td><td className="num r">{compact(v.marketCap)}</td>{COLS.map(([k, , d]) => <td key={k} className="num r">{fmt(v[k], d)}</td>)}<td className="text-muted">{f ? f.fiscalYear : "—"}</td></tr>)}</tbody></table></div></Card>
     </div>
   );

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getQuotes, latestMacro } from "@/lib/market";
 import { valuation } from "@/lib/fundamentals";
 import { Card, Empty, PageHeader, Stat } from "@/components/ui";
+import Glossed from "@/components/Glossed";
 import { BarChartBox } from "@/components/charts/LineChartBox";
 import { compact, fmt } from "@/lib/format";
 
@@ -18,7 +19,7 @@ export default async function Page({ params }: { params: Promise<{ symbol: strin
     <div>
       <PageHeader crumbs={[{ href: "/fundamentals", label: "Fundamentals" }]} title={`${s.symbol} fundamentals`} subtitle={s.name}><Link href={`/stocks/${s.symbol}`} className="btn btn-ghost">Price chart →</Link></PageHeader>
       <div className="grid gap-3 sm:grid-cols-4 lg:grid-cols-8">
-        {([["Market cap", compact(v.marketCap)], ["P/E", fmt(v.pe, 1)], ["P/B", fmt(v.pb)], ["Div. yield", `${fmt(v.divYield)}%`], ["ROE", `${fmt(v.roe, 1)}%`], ["ROA", `${fmt(v.roa, 1)}%`], ["Net margin", `${fmt(v.netMargin, 1)}%`], ["Debt/Equity", fmt(v.debtToEquity)]] as const).map(([l, x]) => <Stat key={l} label={l} value={x} />)}
+        {([["Market cap", compact(v.marketCap), "marketcap"], ["P/E", fmt(v.pe, 1), "pe"], ["P/B", fmt(v.pb), "pb"], ["Div. yield", `${fmt(v.divYield)}%`, "divyield"], ["ROE", `${fmt(v.roe, 1)}%`, "roe"], ["ROA", `${fmt(v.roa, 1)}%`], ["Net margin", `${fmt(v.netMargin, 1)}%`], ["Debt/Equity", fmt(v.debtToEquity)]] as const).map(([l, x, k]) => <Stat key={l} label={k ? <Glossed k={k as never}>{l}</Glossed> : l} value={x} />)}
       </div>
       {f.length ? (
         <>

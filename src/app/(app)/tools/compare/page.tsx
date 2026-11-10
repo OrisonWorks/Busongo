@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { getAllBars, getIndex } from "@/lib/market";
 import { alignSeries, dailyReturns, stats } from "@/lib/compare";
 import { Card, Chg, Empty, PageHeader } from "@/components/ui";
+import Glossed from "@/components/Glossed";
 import { LineChartBox } from "@/components/charts/LineChartBox";
 import { compact, fmt } from "@/lib/format";
 
@@ -45,12 +46,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
               <div className="overflow-x-auto"><table className="data"><thead><tr><th></th>{rows.map((r) => <th key={r.symbol} className="r"><a href={`/stocks/${r.symbol}`} className="text-brand">{r.symbol}</a></th>)}</tr></thead>
                 <tbody>
                   <tr><td className="text-muted">Name</td>{rows.map((r) => <td key={r.symbol} className="r text-xs text-muted">{r.name}</td>)}</tr>
-                  <tr><td>Total return</td>{rows.map((r) => <td key={r.symbol} className="r"><Chg v={r.st.totalReturn} /></td>)}</tr>
-                  <tr><td>Volatility (annual)</td>{rows.map((r) => <td key={r.symbol} className="num r">{fmt(r.st.volatility, 1)}%</td>)}</tr>
-                  <tr><td>Worst fall</td>{rows.map((r) => <td key={r.symbol} className="num r">{fmt(r.st.maxDrawdown, 1)}%</td>)}</tr>
-                  <tr><td>Avg day value</td>{rows.map((r) => <td key={r.symbol} className="num r">{compact(r.st.avgValue)}</td>)}</tr>
-                  <tr><td>Beta vs LASI</td>{rows.map((r) => <td key={r.symbol} className="num r">{fmt(r.st.beta)}</td>)}</tr>
-                  <tr><td>Tracks LASI</td>{rows.map((r) => <td key={r.symbol} className="num r">{r.st.corr != null ? `${fmt(r.st.corr * 100, 0)}%` : "—"}</td>)}</tr>
+                  <tr><td><Glossed k="yield">Total return</Glossed></td>{rows.map((r) => <td key={r.symbol} className="r"><Chg v={r.st.totalReturn} /></td>)}</tr>
+                  <tr><td><Glossed k="volatility">Volatility (annual)</Glossed></td>{rows.map((r) => <td key={r.symbol} className="num r">{fmt(r.st.volatility, 1)}%</td>)}</tr>
+                  <tr><td><Glossed k="drawdown">Worst fall</Glossed></td>{rows.map((r) => <td key={r.symbol} className="num r">{fmt(r.st.maxDrawdown, 1)}%</td>)}</tr>
+                  <tr><td><Glossed k="volume">Avg day value</Glossed></td>{rows.map((r) => <td key={r.symbol} className="num r">{compact(r.st.avgValue)}</td>)}</tr>
+                  <tr><td><Glossed k="beta">Beta vs LASI</Glossed></td>{rows.map((r) => <td key={r.symbol} className="num r">{fmt(r.st.beta)}</td>)}</tr>
+                  <tr><td><Glossed k="lasi">Tracks LASI</Glossed></td>{rows.map((r) => <td key={r.symbol} className="num r">{r.st.corr != null ? `${fmt(r.st.corr * 100, 0)}%` : "—"}</td>)}</tr>
                   <tr><td className="text-muted">Sessions</td>{rows.map((r) => <td key={r.symbol} className="num r text-muted">{r.st.sessions}</td>)}</tr>
                 </tbody></table></div>
             </Card>

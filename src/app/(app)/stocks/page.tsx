@@ -8,7 +8,7 @@ export default async function Page() {
   const q = await getQuotes();
   return (
     <div>
-      <PageHeader title="All LuSE Stocks" subtitle={`${q.length} listed securities on the Main Board and Alternative Market`} />
+      <PageHeader title="All LuSE Stocks" subtitle={`Every share you can buy a piece of on the Lusaka Securities Exchange — ${q.length} companies on the Main Board and Alternative Market`} />
       <MarketTabs active="/stocks" />
       <Card><QuoteTable rows={q} /></Card>
     </div>
