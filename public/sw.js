@@ -17,15 +17,15 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   const req = e.request;
-  if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Signing out clears saved pages, which may show the signed-in name.
+  // Signing out (a POST) clears saved pages: they can hold the signed-in name and email.
   if (url.pathname === "/logout") {
     e.waitUntil(caches.delete(PAGES));
     return;
   }
+  if (req.method !== "GET") return;
 
   // Build files never change once published.
   if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
