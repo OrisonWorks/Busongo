@@ -15,7 +15,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
   const viewer = await getUser();
   if (!planAtLeast(viewer?.effectivePlan ?? effectivePlan(null), "ADVANCED")) return (
     <div>
-      <PageHeader title="Smart Money Concepts" subtitle="Swing structure (HH/HL/LH/LL), break of structure (BOS), change of character (CHoCH), order blocks and unfilled fair-value gaps." />
+      <PageHeader title="Smart Money Concepts" subtitle="Advanced price-action reading: where a share's up/down pattern broke or continued. For experienced chart readers." />
       <ToolTabs active="/tools/smc" />
       <PlanLock min="ADVANCED" feature="Smart Money tools" signedIn={!!viewer} />
     </div>
@@ -31,7 +31,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
   const levels = [...obs.map((o) => ({ price: o.dir === "bull" ? o.top : o.bottom, color: o.dir === "bull" ? "#22c55e" : "#ef4444", title: "OB" })), ...fvg.map((g) => ({ price: (g.top + g.bottom) / 2, color: "#a78bfa", title: "FVG" }))];
   return (
     <div>
-      <PageHeader title="Smart Money Concepts" subtitle="Swing structure (HH/HL/LH/LL), break of structure (BOS), change of character (CHoCH), order blocks and unfilled fair-value gaps." />
+      <PageHeader title="Smart Money Concepts" subtitle="Advanced price-action reading: where a share's up/down pattern broke or continued. For experienced chart readers." />
       <ToolTabs active="/tools/smc" />
       <SymbolPicker symbols={syms} value={symbol} />
       <Card title={<span>{symbol} · structure {trend ? <Badge color={trend === "bull" ? "green" : "red"}>{trend === "bull" ? "Bullish" : "Bearish"}</Badge> : "undetermined"}</span>}>

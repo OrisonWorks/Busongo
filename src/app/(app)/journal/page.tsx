@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import Glossed from "@/components/Glossed";
 import { requireUser } from "@/lib/auth";
 import { addJournal, deleteJournal } from "../actions";
 import ActionForm from "@/components/ActionForm";
@@ -27,9 +28,9 @@ export default async function Page() {
   const open = [...lots].map(([s, L]) => ({ s, q: L.reduce((a, l) => a + l.q, 0), cost: L.reduce((a, l) => a + l.q * l.p, 0) })).filter((x) => x.q > 0);
   return (
     <div>
-      <PageHeader title="Trade Journal" subtitle="Log your real trades (fees default to LuSE's 1.375%) and track realised P&L, or save backtest trades here." />
+      <PageHeader title="Trade Journal" subtitle="A notebook for trades you made in real life — fees default to LuSE's 1.375% — so you can see what you really gained or lost." />
       <div className="grid gap-3 sm:grid-cols-4">
-        <Stat label="Realised P&L" value={<span className={tone(realised)}>K{fmt(realised)}</span>} />
+        <Stat label={<Glossed k="pnl">Realised P&L</Glossed>} value={<span className={tone(realised)}>K{fmt(realised)}</span>} />
         <Stat label="Closing trades" value={closes} sub={closes ? `${((wins / closes) * 100).toFixed(0)}% winners` : undefined} />
         <Stat label="Fees paid" value={`K${fmt(fees)}`} />
         <Stat label="Open positions" value={open.length} />

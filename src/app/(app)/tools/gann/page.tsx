@@ -14,7 +14,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
   const viewer = await getUser();
   if (!planAtLeast(viewer?.effectivePlan ?? effectivePlan(null), "ADVANCED")) return (
     <div>
-      <PageHeader title="Gann Tools" subtitle="Square of 9 levels, Gann angles from the major low, and calendar time cycles." />
+      <PageHeader title="Gann Tools" subtitle="A chartist's toolkit: price levels and time cycles some traders watch — advanced analysis, not a prediction." />
       <ToolTabs active="/tools/gann" />
       <PlanLock min="ADVANCED" feature="Gann tools" signedIn={!!viewer} />
     </div>
@@ -34,7 +34,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
   const cycles = low ? [30, 45, 60, 90, 120, 144, 180, 270, 360].map((d) => ({ d, date: new Date(+new Date(low.date) + d * 86400000).toISOString().slice(0, 10) })) : [];
   return (
     <div>
-      <PageHeader title="Gann Tools" subtitle="Square of 9 levels, Gann angles from the major low, and calendar time cycles." />
+      <PageHeader title="Gann Tools" subtitle="A chartist's toolkit: price levels and time cycles some traders watch — advanced analysis, not a prediction." />
       <ToolTabs active="/tools/gann" />
       <SymbolPicker symbols={syms} value={symbol} />
       <div className="grid gap-4 lg:grid-cols-3">

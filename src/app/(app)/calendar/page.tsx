@@ -17,7 +17,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
   const today = new Date().toISOString().slice(0, 10);
   return (
     <div>
-      <PageHeader title="Calendars" subtitle="Market holidays, auction dates, results and corporate actions." />
+      <PageHeader title="Calendars" subtitle="Dates that matter: market holidays, government bond auctions, company results and dividend dates." />
       <Tabs items={tabs} active={`/calendar?tab=${tab}`} />
       <Card>
         {tab === "holidays" && <table className="data"><thead><tr><th>Date</th><th>Day</th><th>Holiday (market closed)</th></tr></thead><tbody>{hol.map((h) => <tr key={h.id} className={h.date.toISOString().slice(0, 10) < today ? "opacity-50" : ""}><td>{fmtDate(h.date)}</td><td>{h.date.toLocaleDateString("en-GB", { weekday: "long", timeZone: "UTC" })}</td><td>{h.name}</td></tr>)}</tbody></table>}

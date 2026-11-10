@@ -15,7 +15,7 @@ export default async function Page() {
   const active = alerts.filter((a) => a.active).length;
   return (
     <div>
-      <PageHeader title="Alerts" subtitle={`Alerts are checked after each end-of-day update. ${active}/${PLANS[u.effectivePlan].alerts} active on your plan.`} />
+      <PageHeader title="Alerts" subtitle={`Get told when a price crosses a level you set — checked once a day after market close. ${active}/${PLANS[u.effectivePlan].alerts} alerts active.`} />
       <Card title="New alert"><AlertForm symbols={syms.map((s) => s.symbol)} /></Card>
       <Card title="My alerts" className="mt-4">
         {alerts.length ? <table className="data"><thead><tr><th>Symbol</th><th>Condition</th><th>Status</th><th>Created</th><th></th></tr></thead><tbody>

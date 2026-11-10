@@ -20,7 +20,7 @@ export default async function Page() {
   const total = cash + holdings.reduce((a, h) => a + h.mv, 0);
   return (
     <div>
-      <PageHeader title="Paper Trading" subtitle={`Practise with a virtual K${fmt(PAPER_START, 0)} portfolio. Orders fill at the latest closing price, with real fees.`} />
+      <PageHeader title="Paper Trading" subtitle={`Practise buying and selling with play money (K${fmt(PAPER_START, 0)} virtual) — fills use real closing prices and fees, but no real money is involved.`} />
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat label="Portfolio value" value={`K${fmt(total)}`} change={(total / PAPER_START - 1) * 100} />
         <Stat label="Cash" value={`K${fmt(cash)}`} />
