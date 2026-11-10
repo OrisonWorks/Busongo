@@ -22,7 +22,9 @@ self.addEventListener("fetch", (e) => {
 
   // Signing out (a POST) clears saved pages: they can hold the signed-in name and email.
   if (url.pathname === "/logout") {
-    e.waitUntil(caches.delete(PAGES));
+    // Re-prime after clearing (logout is online anyway) so offline pages and the fallback survive,
+    // and nothing saved keeps signed-in HTML.
+    e.waitUntil(caches.delete(PAGES).then(() => caches.open(PAGES)).then((c) => c.addAll(PRECACHE)));
     return;
   }
   if (req.method !== "GET") return;
