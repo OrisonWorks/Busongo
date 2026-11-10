@@ -38,6 +38,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
         {bars.length > 10 ? <PriceChart bars={bars} markers={markers} levels={levels} height={420} /> : <p className="text-sm text-muted">Not enough history for structure analysis.</p>}
       </Card>
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <div className="card p-4 text-xs text-muted">
+          <span className="font-semibold text-foreground">Reading this page:</span> HH/HL = higher highs / higher lows (price climbing). LH/LL = lower highs / lower lows (price falling). BOS = break of structure — the trend continued past an old level. CHoCH = change of character — the trend may be turning. An order block is a price zone where big buyers or sellers acted before; a fair-value gap is a price zone skipped so fast it may be revisited.
+        </div>
         <Card title="Recent structure breaks"><table className="data"><tbody>{events.slice(-10).reverse().map((e, i) => <tr key={i}><td>{fmtDate(e.date)}</td><td>{e.kind}</td><td className={e.dir === "bull" ? "text-up" : "text-down"}>{e.dir}</td><td className="r">{fmt(e.level)}</td></tr>)}</tbody></table></Card>
         <Card title="Order blocks"><table className="data"><tbody>{obs.reverse().map((o, i) => <tr key={i}><td>{fmtDate(o.date)}</td><td className={o.dir === "bull" ? "text-up" : "text-down"}>{o.dir === "bull" ? "Demand" : "Supply"}</td><td className="r">{fmt(o.bottom)} – {fmt(o.top)}</td></tr>)}</tbody></table></Card>
         <Card title="Unfilled fair-value gaps"><table className="data"><tbody>{fvg.reverse().map((g, i) => <tr key={i}><td>{fmtDate(g.date)}</td><td className={g.dir === "bull" ? "text-up" : "text-down"}>{g.dir}</td><td className="r">{fmt(g.bottom)} – {fmt(g.top)}</td></tr>)}</tbody></table></Card>
