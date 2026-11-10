@@ -21,7 +21,7 @@ export default function Term({ children, title, def }: { children: React.ReactNo
         {children}
       </button>
       {open && (
-        <span id={id} role="note" className="absolute left-0 top-full z-30 mt-1 block w-64 rounded-lg border border-line bg-panel2 p-3 text-left text-xs font-normal normal-case leading-relaxed text-fg shadow-xl">
+        <span id={id} role="note" className={`absolute top-full z-30 mt-1 block w-64 max-w-[85vw] rounded-lg border border-line bg-panel2 p-3 text-left text-xs font-normal normal-case leading-relaxed text-fg shadow-xl ${ref.current && ref.current.getBoundingClientRect().left + 256 > window.innerWidth ? "right-0" : "left-0"}`}>
           <b className="mb-1 block">{title}</b>{def}
         </span>
       )}
