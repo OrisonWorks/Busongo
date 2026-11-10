@@ -27,7 +27,7 @@ const Item = ({ i }: { i: NavItem }) => (
 export function Logo() {
   return (
     <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
-      <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-emerald-400 to-amber-400 text-sm text-black">{brand.shortName.slice(0, 2).toUpperCase()}</span>
+      <img src="/logo.png" alt={`${brand.name} logo`} className="h-8 w-8 rounded-lg" />
       <span>{brand.name}</span>
     </Link>
   );
