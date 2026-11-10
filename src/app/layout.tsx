@@ -17,13 +17,21 @@ export const metadata: Metadata = {
   title: { default: `${brand.name} — ${brand.tagline}`, template: `%s | ${brand.name}` },
   description: brand.description,
   openGraph: { siteName: brand.name, type: "website", locale: "en_ZM" },
+  icons: { apple: "/icons/icon-192.png" },
 };
+
+export const viewport = { themeColor: "#070b14" };
+
+const SW_REGISTER = `if("serviceWorker"in navigator&&window.top===window)addEventListener("load",function(){navigator.serviceWorker.register("/sw.js")})`;
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const [user, lang] = await Promise.all([getUser(), getLocale()]);
   return (
     <html lang={lang} suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: A11Y_BOOT }} /></head>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: A11Y_BOOT }} />
+        {process.env.NODE_ENV === "production" && <script dangerouslySetInnerHTML={{ __html: SW_REGISTER }} />}
+      </head>
       <body className={`${sans.variable} ${mono.variable} antialiased`}>
         <HideOnEmbed><a href="#main" className="skip-link">Skip to main content</a></HideOnEmbed>
         <HideOnEmbed><Navbar user={user ? { name: user.name, email: user.email, plan: user.plan, role: user.role } : null} lang={lang} /></HideOnEmbed>

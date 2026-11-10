@@ -1,5 +1,7 @@
 import Link from "next/link";
 import ListenButton from "@/components/ListenButton";
+import ShareButton from "@/components/ShareButton";
+import { brand } from "@/config/brand";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import PlainCalculators from "@/components/PlainCalculators";
 import { GLOSSARY } from "@/components/Glossed";
@@ -27,6 +29,7 @@ export default async function Page() {
           <h1 className="text-4xl font-bold">{tt("title")}</h1>
           <p className="mt-2 max-w-2xl text-lg text-muted">{tt("subtitle")}</p>
           {f.updated && <p className="mt-1 text-sm text-muted">{t(l, "updated", { date: fmtDate(f.updated) })}</p>}
+          <p className="mt-1 text-sm"><a href={`/lite${l === "en" ? "" : `?lang=${l}`}`} className="text-brand underline">{tt("lite")}</a></p>
         </div>
         <LanguageSwitcher value={l} label={tt("language")} />
       </div>
@@ -43,7 +46,10 @@ export default async function Page() {
               <summary className="cursor-pointer text-brand">{tt("whatMeans")}</summary>
               <p className="mt-2 leading-relaxed text-muted">{c.explain}</p>
             </details>
-            <div className="mt-auto pt-4"><ListenButton text={english.get(c.id) ?? cardSpeech(c)} label={tt("listen")} stopLabel={tt("stop")} note={tt("listenNote")} /></div>
+            <div className="mt-auto flex flex-wrap gap-2 pt-4">
+              <ListenButton text={english.get(c.id) ?? cardSpeech(c)} label={tt("listen")} stopLabel={tt("stop")} note={tt("listenNote")} />
+              <ShareButton label={tt("share")} file={`busongo-${c.id}.png`} image={`/kwacha-today/image/${c.id}${l === "en" ? "" : `?lang=${l}`}`} text={`${c.title}: ${c.line}${c.month ? ` ${c.month}` : ""}\n${brand.siteUrl}/kwacha-today`} />
+            </div>
           </section>
         ))}
         {!cards.length && <p className="text-muted">{tt("noData")}</p>}
