@@ -2,6 +2,7 @@ import Link from "next/link";
 import ListenButton from "@/components/ListenButton";
 import ShareButton from "@/components/ShareButton";
 import { brand } from "@/config/brand";
+import { WA_CHANNEL_URL } from "@/lib/whatsapp";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import PlainCalculators from "@/components/PlainCalculators";
 import { GLOSSARY } from "@/components/Glossed";
@@ -29,7 +30,7 @@ export default async function Page() {
           <h1 className="text-4xl font-bold">{tt("title")}</h1>
           <p className="mt-2 max-w-2xl text-lg text-muted">{tt("subtitle")}</p>
           {f.updated && <p className="mt-1 text-sm text-muted">{t(l, "updated", { date: fmtDate(f.updated) })}</p>}
-          <p className="mt-1 text-sm"><a href={`/lite${l === "en" ? "" : `?lang=${l}`}`} className="text-brand underline">{tt("lite")}</a></p>
+          <p className="mt-1 text-sm"><a href={`/lite${l === "en" ? "" : `?lang=${l}`}`} className="text-brand underline">{tt("lite")}</a>{" · "}<Link href="/kwacha-today/share" className="text-brand underline">{tt("shareKit")}</Link>{WA_CHANNEL_URL && <>{" · "}<a href={WA_CHANNEL_URL} target="_blank" rel="noopener noreferrer" className="text-brand underline">WhatsApp channel</a></>}</p>
         </div>
         <LanguageSwitcher value={l} label={tt("language")} />
       </div>

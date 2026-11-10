@@ -3,6 +3,7 @@ import { plainCards, plainFacts } from "@/lib/plain-facts";
 import { isLocale, LANG_COOKIE, LOCALES, t, type Key, type Locale } from "@/lib/i18n";
 import { fmtDate } from "@/lib/format";
 import { brand } from "@/config/brand";
+import { kwachaTodayMessage } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
   try {
     const f = await plainFacts();
     const cards = plainCards(f, l);
-    const share = [`${t(l, "title")} (${brand.name})`, ...cards.map((x) => `${x.title}: ${x.line}`), `${brand.siteUrl}/lite${l === "en" ? "" : `?lang=${l}`}`].join("\n\n");
+    const share = kwachaTodayMessage(f, l);
     body = `${f.updated ? `<p class="m">${tt("updated", { date: fmtDate(f.updated) })}</p>` : ""}
 ${l !== "en" ? `<p class="n">${tt("draft")}</p>` : ""}
 ${cards.map((x) => `<h2>${esc(x.title)}</h2><p class="b">${esc(x.big)}</p><p>${esc(x.line)}</p>${x.month ? `<p class="m">${esc(x.month)}</p>` : ""}<details><summary>${tt("whatMeans")}</summary><p>${esc(x.explain)}</p></details>`).join("\n") || `<p>${tt("noData")}</p>`}
