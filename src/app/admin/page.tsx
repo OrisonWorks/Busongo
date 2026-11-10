@@ -27,6 +27,7 @@ export default async function Page() {
   const latestBars = !luseDue && ds.equityLast ? await prisma.priceBar.count({ where: { date: new Date(`${ds.equityLast}T00:00:00Z`), security: { assetClass: "EQUITY" } } }) : 0;
   const lusePartial = !luseDue && latestBars < MIN_SESSION_PRICE_BARS;
   const template = ["date,symbol,open,high,low,close,volume,value,trades", ...syms.map((s) => `${expected.toISOString().slice(0, 10)},${s.symbol},,,,,,,`)].join("\n");
+  const fTemplate = ["symbol,fiscalyear,period,revenue,grossprofit,operatingprofit,netincome,totalassets,totalliabilities,totalequity,totaldebt,cash,operatingcashflow,capex,eps,dps,sharesoutstanding", ...syms.map((s) => `${s.symbol},2025,FY,,,,,,,,,,,,,`)].join("\n");
   const ok = pays.filter((p) => p.status === "success");
   const paid = ok.filter((p) => p.currency === "ZMW").reduce((a, p) => a + p.amount, 0);
   const paidStable = ok.filter((p) => p.currency !== "ZMW").reduce((a, p) => a + p.amount, 0);
@@ -69,7 +70,7 @@ export default async function Page() {
           <ActionForm action={importPricesAction} submit="Import prices" className="space-y-2"><input type="file" name="file" accept=".csv,text/csv" className="input" /><textarea name="csv" rows={4} className="input font-mono text-xs" placeholder="date,symbol,close,volume&#10;2024-01-02,ZSUG,35.5,1200" /></ActionForm>
         </Card>
         <Card title="Import fundamentals (CSV)">
-          <p className="mb-2 text-xs text-muted">Columns: <code>symbol,fiscalyear</code> plus any of revenue, grossprofit, operatingprofit, netincome, totalassets, totalliabilities, totalequity, totaldebt, cash, operatingcashflow, capex, eps, dps, sharesoutstanding, sourceurl.</p>
+          <p className="mb-2 text-xs text-muted">Columns: <code>symbol,fiscalyear</code> plus optional <code>period</code> (FY, H1, H2, Q1–Q4) and any of revenue, grossprofit, operatingprofit, netincome, totalassets, totalliabilities, totalequity, totaldebt, cash, operatingcashflow, capex, eps, dps, sharesoutstanding, sourceurl. Figures go in full kwacha (e.g. 1500000 for K1.5m). <a download="busongo-fundamentals-template.csv" href={`data:text/csv;charset=utf-8,${encodeURIComponent(fTemplate)}`} className="text-brand underline">Download a template</a> with every LuSE symbol — fill in the figures from each company’s published annual results and re-import.</p>
           <ActionForm action={importFundamentalsAction} submit="Import fundamentals" className="space-y-2"><input type="file" name="file" accept=".csv,text/csv" className="input" /><textarea name="csv" rows={4} className="input font-mono text-xs" placeholder="symbol,fiscalyear,revenue,netincome,eps,dps" /></ActionForm>
         </Card>
       </div>
