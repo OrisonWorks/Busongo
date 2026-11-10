@@ -86,7 +86,10 @@ export default function Navbar({ user, lang = "en" }: { user: { name: string | n
             </div>
           ))}
           {PAYMENTS_ENABLED && <Link href="/pricing" className="block py-1 text-sm">Pricing</Link>}
-          <Link href="/blog" className="block py-1 text-sm">Blog</Link>
+          <div className="mb-3">
+            <div className="text-xs font-semibold uppercase text-brand">Resources</div>
+            {RESOURCES.map((i) => <Link key={i.href} href={i.href} className="block py-1 text-sm">{i.label}</Link>)}
+          </div>
           <div className="mt-3 flex gap-2">
             {user ? <Link href="/dashboard" className="btn btn-primary">Dashboard</Link> : <><Link href="/login" className="btn btn-ghost">Sign in</Link><Link href="/register" className="btn btn-primary">Start free</Link></>}
           </div>

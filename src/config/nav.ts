@@ -48,6 +48,7 @@ export const SOLUTIONS: NavItem[] = [
 ];
 
 export const RESOURCES: NavItem[] = [
+  { href: "/learn", label: "Learn", desc: "How shares, dividends and the LASI work — in plain language" },
   { href: "/blog", label: "Blog", desc: "Guides and market research" },
   { href: "/videos", label: "Videos", desc: "Walkthroughs and tutorials" },
   { href: "/reference", label: "Reference", desc: "Indicator glossary, fees and market hours" },
