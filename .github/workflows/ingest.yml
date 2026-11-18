@@ -18,4 +18,4 @@ jobs:
         with: { node-version: 20, cache: npm }
       - run: npm ci
       - run: npx prisma migrate deploy
-      - run: npm run ingest -- boz crypto p2p defi brief sens-ai proofs roadmap
+      - run: npm run ingest -- mansa boz crypto p2p defi brief sens-ai proofs roadmap

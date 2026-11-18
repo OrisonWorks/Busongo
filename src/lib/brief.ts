@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "./db";
 import { breadth, getIndex, getQuotes, latestMacro } from "./market";
 import { aiConfigured, complete } from "./ai";
+import { fetchZambiaNews } from "./ai/news";
 import { BRIEF_PROMPT } from "./ai/prompts";
 import { CRYPTO_ENABLED } from "@/config/features";
 
@@ -59,7 +60,9 @@ export async function generateBrief() {
     }
   }
   const date = new Date(facts.date + "T00:00:00Z");
-  await prisma.dailyBrief.upsert({ where: { date }, update: { content, source }, create: { date, content, source } });
+  let news: Awaited<ReturnType<typeof fetchZambiaNews>> | undefined;
+  try { news = await fetchZambiaNews(); } catch (e) { console.error("brief news", e); }
+  await prisma.dailyBrief.upsert({ where: { date }, update: { content, source, ...(news?.length ? { news } : {}) }, create: { date, content, source, news } });
   return { date: facts.date, source, chars: content.length };
 }
 

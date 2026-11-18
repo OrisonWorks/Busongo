@@ -152,6 +152,7 @@ model DailyBrief {
   id        String   @id @default(cuid())
   date      DateTime @unique @db.Date
   content   String
+  news      Json?
   source    String   @default("template")
   createdAt DateTime @default(now())
 }
