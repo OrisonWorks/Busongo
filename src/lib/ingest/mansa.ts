@@ -23,6 +23,8 @@ export type MansaStock = { symbol: string; close: number; pctChange: number | nu
 
 /** Mansa uses short tickers where LuSE uses longer codes. */
 const ALIAS: Record<string, string> = { REIZ: "REIZUSD", ZCCM: "ZCCM-IH" };
+/** Dividend-calendar URL slugs that differ from board tickers or securities whose names start with a generic word. */
+const SLUG_ALIAS: Record<string, string> = { zanaco: "ZNCO" };
 
 /** Price + % change for every LuSE counter on the Zambia board page. The mover cards repeat symbols later in the HTML, so first occurrence wins. */
 export function parseMansaBoard(home: string) {
@@ -123,10 +125,11 @@ export async function ingestMansaDividends() {
   let saved = 0; const unmatched: string[] = [];
   for (const r of rows) {
     if (!isFinite(r.dps)) continue;
-    const sec = matchSecurity(`${r.name} ${r.slug}`, secs);
+    const sec = (SLUG_ALIAS[r.slug] && secs.find((x) => x.symbol === SLUG_ALIAS[r.slug])) || matchSecurity(`${r.name} ${r.slug}`, secs);
     if (!sec) { unmatched.push(r.name); continue; }
     const data = { exDate: r.exDate ?? undefined, payDate: r.payDate ?? undefined, amount: r.dps, notes: `${r.type} ${r.fy}${r.yieldPct != null ? ` · yield ≈${r.yieldPct}%` : ""} · ${r.status}`, source: "mansa" };
-    const existing = await prisma.corporateAction.findFirst({ where: { securityId: sec.id, type: "DIVIDEND", exDate: r.exDate ?? undefined, amount: r.dps } });
+    // exDate/payDate may be TBD (null): matching on nulls keeps a new TBD dividend from overwriting a dated historical row with the same amount.
+    const existing = await prisma.corporateAction.findFirst({ where: { securityId: sec.id, type: "DIVIDEND", exDate: r.exDate, payDate: r.payDate, amount: r.dps } });
     if (existing) await prisma.corporateAction.update({ where: { id: existing.id }, data });
     else await prisma.corporateAction.create({ data: { ...data, securityId: sec.id, type: "DIVIDEND" } });
     saved++;
