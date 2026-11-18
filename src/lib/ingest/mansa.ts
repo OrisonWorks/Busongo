@@ -12,9 +12,16 @@ const get = (path: string) => fetch(BASE + path, { headers: { "User-Agent": UA, 
 const suf = (v: string | undefined, suffix: string | undefined) => (v == null ? null : parseFloat(v.replace(/,/g, "")) * ({ K: 1e3, M: 1e6, B: 1e9 }[suffix ?? ""] ?? 1));
 const sessionDate = (s: string) => { const m = s.match(/on (?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day, (\d{1,2}) (\w+) (\d{4})/); return m ? `${m[3]}-${MON[m[2]]}-${m[1].padStart(2, "0")}` : null; };
 const pct = (s: string) => num(s.replace("−", "-").replace("%", ""));
-const volume = (s: string, label = "Volume") => { const m = s.match(new RegExp(label + "<\\/div><div[^>]*>([\\d,.]+)\\s*([KMB])\\b")) ?? s.match(new RegExp(label + "\\s*([\\d,.]+)\\s*([KMB])\\b")); return m ? suf(m[1], m[2]) : null; };
+export const volume = (s: string, label = "Volume") => {
+  // Label and value sit in sibling tags (</div><div> or </span><span>) or plain text; the suffix is optional (e.g. "4" shares).
+  const m = s.match(new RegExp(label + "(?:</\\w+>\\s*<\\w+[^>]*>|\\s+)\\s*([\\d,.]+)\\s*([KMB])?\\b"));
+  return m ? suf(m[1], m[2]) : null;
+};
 
-export type MansaStock = { symbol: string; close: number; pctChange: number };
+export type MansaStock = { symbol: string; close: number; pctChange: number | null };
+
+/** Mansa uses short tickers where LuSE uses longer codes. */
+const ALIAS: Record<string, string> = { REIZ: "REIZUSD", ZCCM: "ZCCM-IH" };
 
 /** Price + % change for every LuSE counter on the Zambia board page. The mover cards repeat symbols later in the HTML, so first occurrence wins. */
 export function parseMansaBoard(home: string) {
@@ -23,15 +30,19 @@ export function parseMansaBoard(home: string) {
   const lasiM2 = home.match(/LASI Index\s*([\d,.]+)\s*[^\d+\-−]{0,10}([+\-−]?[\d.]+)%/);
   const capM = home.match(/Market [Cc]ap(?:italisation)?(?:\s*stood at)?[^0-9]{0,40}ZMW\s*([\d,.]+)\s*([BM])/);
   const stocks: MansaStock[] = [];
-  const seen = new Set<string>();
-  const row = /font-mono-dm[^>]*>([A-Z]{2,6})<\/div><div class="truncate[^>]*>([^<]+)<\/div>.*?>(ZK[\d,.]+)<\/div>.*?([+\-−]?\d+\.\d+%)/g;
+  // Tight per-row structure so a counter with no % badge ("—") can't swallow the next row's value.
+  const row = /font-mono-dm[^>]*>([A-Z]{2,6})<\/div><div class="truncate[^>]*>([^<]+)<\/div><\/div><div class="flex-shrink-0 text-right"><div class="font-mono-dm[^>]*>(ZK[\d,.]+)<\/div><span[^>]*>([^<]*)<\/span>/g;
   let m: RegExpExecArray | null;
+  const bySymbol = new Map<string, MansaStock>();
   while ((m = row.exec(home))) {
     const symbol = m[1];
-    if (seen.has(symbol)) continue;
-    seen.add(symbol);
-    stocks.push({ symbol, close: parseFloat(m[3].replace(/[ZK,\s]/g, "")), pctChange: pct(m[4]) ?? 0 });
+    const p = m[4].match(/[+\-−]?\d+\.\d+%/);
+    const cur = bySymbol.get(symbol);
+    // The board sometimes shows "—" while the mover cards carry the real signed % — prefer a numeric one.
+    if (cur && cur.pctChange != null) continue;
+    bySymbol.set(symbol, { symbol, close: parseFloat(m[3].replace(/[ZK,\s]/g, "")), pctChange: p ? pct(p[0]) : null });
   }
+  stocks.push(...bySymbol.values());
   return {
     date,
     lasi: lasiM ? { value: num(lasiM[2]), pctChange: pct(lasiM[1]) } : lasiM2 ? { value: num(lasiM2[1]), pctChange: pct(lasiM2[2]) } : { value: null, pctChange: null },
@@ -58,13 +69,16 @@ export async function ingestMansa() {
 
   let rows = 0;
   for (const st of p.stocks) {
-    const meta = LUSE_SECURITIES.find((m) => m.symbol === st.symbol);
+    const symbol = ALIAS[st.symbol] ?? st.symbol;
+    const meta = LUSE_SECURITIES.find((m) => m.symbol === symbol);
     const sec = await prisma.security.upsert({
-      where: { symbol: st.symbol },
+      where: { symbol },
       update: {},
-      create: { symbol: st.symbol, name: meta?.name ?? st.symbol, sector: meta?.sector ?? "Other", board: meta?.board ?? "Main", currency: meta?.currency ?? "ZMW", listedYear: meta?.listedYear, description: meta?.description },
+      create: { symbol, name: meta?.name ?? symbol, sector: meta?.sector ?? "Other", board: meta?.board ?? "Main", currency: meta?.currency ?? "ZMW", listedYear: meta?.listedYear, description: meta?.description },
     });
-    const data = { close: st.close, change: null as number | null, volume: vols.get(st.symbol) ?? null, source: "mansa" };
+    // Absolute change derived from the reported close and % change (Mansa gives no absolute figure).
+    const change = st.pctChange == null ? null : st.close - st.close / (1 + st.pctChange / 100);
+    const data = { close: st.close, change, volume: vols.get(st.symbol) ?? null, source: "mansa" };
     await prisma.priceBar.upsert({ where: { securityId_date: { securityId: sec.id, date } }, update: data, create: { ...data, securityId: sec.id, date } });
     rows++;
   }

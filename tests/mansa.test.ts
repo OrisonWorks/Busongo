@@ -19,7 +19,27 @@ describe("parseMansaBoard", () => {
     const znco = p.stocks.find((s) => s.symbol === "ZNCO")!;
     expect(znco.close).toBeCloseTo(8.51);
     expect(znco.pctChange).toBeCloseTo(-1.05);
+    // +3.76% belongs to ZABR's mover card, not SHOP (board badge "—").
+    const zabr = p.stocks.find((s) => s.symbol === "ZABR")!;
+    expect(zabr.pctChange).toBeCloseTo(3.76);
     const shop = p.stocks.find((s) => s.symbol === "SHOP")!;
-    expect(shop.pctChange).toBeCloseTo(3.76);
+    expect(shop.pctChange).toBeNull();
+    // A counter whose badge is "—" (no % change) must still be kept, not skipped.
+    const mafs = p.stocks.find((s) => s.symbol === "MAFS")!;
+    expect(mafs.close).toBeCloseTo(1.81);
+    expect(mafs.pctChange).toBeNull();
+    expect(p.stocks.some((s) => s.symbol === "KLRE")).toBe(true);
+    expect(p.stocks.some((s) => s.symbol === "NATB")).toBe(true);
+  });
+});
+
+describe("ticker page volume", () => {
+  it("parses Volume from sibling spans and bare numbers", async () => {
+    const { mansaVolume } = await import("../src/lib/ingest/mansa");
+    const { readFileSync } = await import("node:fs");
+    const { volume } = await import("../src/lib/ingest/mansa");
+    const cecz = readFileSync(__dirname + "/fixtures/mansa-cecz.html", "utf8");
+    expect(volume(cecz)).toBeCloseTo(19.7e3);
+    expect(volume('<span>Volume</span><span>4</span>')).toBe(4);
   });
 });
