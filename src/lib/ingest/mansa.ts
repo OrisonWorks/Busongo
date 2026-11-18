@@ -128,8 +128,8 @@ export async function ingestMansaDividends() {
     const sec = (SLUG_ALIAS[r.slug] && secs.find((x) => x.symbol === SLUG_ALIAS[r.slug])) || matchSecurity(`${r.name} ${r.slug}`, secs);
     if (!sec) { unmatched.push(r.name); continue; }
     const data = { exDate: r.exDate ?? undefined, payDate: r.payDate ?? undefined, amount: r.dps, notes: `${r.type} ${r.fy}${r.yieldPct != null ? ` · yield ≈${r.yieldPct}%` : ""} · ${r.status}`, source: "mansa" };
-    // Dedupe on security+ex-date+amount (ex-date null-safe so a TBD row can't match a dated one); payDate is left out so a newly-confirmed date updates the same row instead of duplicating it.
-    const existing = await prisma.corporateAction.findFirst({ where: { securityId: sec.id, type: "DIVIDEND", exDate: r.exDate, amount: r.dps } });
+    // Dedupe on security+ex-date+amount+fiscal year (ex-date null-safe so a TBD row can't match a dated one). payDate is left out so a newly-confirmed date updates the same row; fy (inside notes) keeps equal-amount dividends of different years distinct.
+    const existing = await prisma.corporateAction.findFirst({ where: { securityId: sec.id, type: "DIVIDEND", exDate: r.exDate, amount: r.dps, notes: { contains: r.fy } } });
     if (existing) await prisma.corporateAction.update({ where: { id: existing.id }, data });
     else await prisma.corporateAction.create({ data: { ...data, securityId: sec.id, type: "DIVIDEND" } });
     saved++;
