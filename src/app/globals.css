@@ -29,6 +29,22 @@
 }
 
 html { color-scheme: dark; }
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f6fa;
+  --panel: #ffffff;
+  --panel-2: #eef1f7;
+  --line: #d8dfe9;
+  --fg: #111827;
+  --muted: #5b6577;
+  --brand: #0d9f6e;
+  --brand-2: #b45309;
+  --up: #15803d;
+  --down: #dc2626;
+}
+html[data-theme="light"] .prose-dark p, html[data-theme="light"] .prose-dark li { color: #3d4757; }
+html[data-theme="light"] .prose-dark strong { color: var(--fg); }
+html[data-theme="light"] .btn-primary { color: #ffffff; }
 body { background: var(--bg); color: var(--fg); font-family: var(--font-sans), system-ui, sans-serif; }
 .num { font-variant-numeric: tabular-nums; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 0.875rem; }

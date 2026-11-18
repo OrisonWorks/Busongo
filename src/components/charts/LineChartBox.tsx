@@ -8,7 +8,7 @@ const reducedMotion = () => window.matchMedia(MQ).matches || document.documentEl
 
 
 export type LineDef = { key: string; name: string; color: string; dashed?: boolean };
-const tip = { contentStyle: { background: "#0d1424", border: "1px solid #1e2a44", borderRadius: 8, fontSize: 12 }, labelStyle: { color: "#e6ebf5" } };
+const tip = { contentStyle: { background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 8, fontSize: 12 }, labelStyle: { color: "var(--fg)" } };
 
 export function LineChartBox({ data, x, lines, height = 300, unit = "", area = false, numericX = false }: { data: Record<string, unknown>[]; x: string; lines: LineDef[]; height?: number | `${number}%`; unit?: string; area?: boolean; numericX?: boolean }) {
   const C = area ? AreaChart : LineChart;

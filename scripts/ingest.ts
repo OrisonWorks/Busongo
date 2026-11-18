@@ -1,6 +1,6 @@
 import { prisma } from "../src/lib/db";
 import { ingestLuse } from "../src/lib/ingest/luse";
-import { ingestMansa } from "../src/lib/ingest/mansa";
+import { ingestMansa, ingestMansaDividends } from "../src/lib/ingest/mansa";
 import { ingestBoz } from "../src/lib/ingest/boz";
 import { ingestCrypto } from "../src/lib/ingest/crypto";
 import { evaluateAlerts } from "../src/lib/alerts";
@@ -10,7 +10,7 @@ import { ingestStableYields } from "../src/lib/ingest/defi";
 import { anchorMarketData, anchorRoadmapTally } from "../src/lib/web3/proofs";
 import { summarizeAnnouncements } from "../src/lib/ai/sens";
 
-const jobs: Record<string, () => Promise<unknown>> = { luse: ingestLuse, mansa: ingestMansa, boz: ingestBoz, crypto: () => ingestCrypto(), p2p: ingestP2P, defi: () => ingestStableYields(), brief: generateBrief, "sens-ai": () => summarizeAnnouncements(15), proofs: anchorMarketData, roadmap: anchorRoadmapTally };
+const jobs: Record<string, () => Promise<unknown>> = { luse: ingestLuse, mansa: ingestMansa, "mansa-dividends": ingestMansaDividends, boz: ingestBoz, crypto: () => ingestCrypto(), p2p: ingestP2P, defi: () => ingestStableYields(), brief: generateBrief, "sens-ai": () => summarizeAnnouncements(15), proofs: anchorMarketData, roadmap: anchorRoadmapTally };
 
 async function run(name: string) {
   const r = await prisma.ingestRun.create({ data: { source: name, status: "running" } });

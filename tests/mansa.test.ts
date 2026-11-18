@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { parseMansaBoard } from "../src/lib/ingest/mansa";
+import { parseMansaBoard, parseMansaDividends } from "../src/lib/ingest/mansa";
 
 const home = readFileSync(__dirname + "/fixtures/mansa-zambia.html", "utf8");
 
@@ -41,5 +41,17 @@ describe("ticker page volume", () => {
     const cecz = readFileSync(__dirname + "/fixtures/mansa-cecz.html", "utf8");
     expect(volume(cecz)).toBeCloseTo(19.7e3);
     expect(volume('<span>Volume</span><span>4</span>')).toBe(4);
+  });
+});
+
+describe("parseMansaDividends", () => {
+  const rows = parseMansaDividends(readFileSync(__dirname + "/fixtures/mansa-dividends.html", "utf8"));
+  it("parses DPS, dates, yield and status", () => {
+    expect(rows.length).toBeGreaterThanOrEqual(1);
+    const z = rows.find((r) => r.name.includes("Zambia National"))!;
+    expect(z.dps).toBeCloseTo(0.58);
+    expect(z.exDate?.toISOString().slice(0, 10)).toBe("2026-05-12");
+    expect(z.payDate?.toISOString().slice(0, 10)).toBe("2026-06-09");
+    expect(z.yieldPct).toBeCloseTo(8.8);
   });
 });

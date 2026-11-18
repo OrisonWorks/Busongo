@@ -2,11 +2,12 @@ import "server-only";
 import { prisma } from "../db";
 import { LUSE_SECURITIES } from "../data/securities";
 import { num } from "./util";
-import { UA } from "./luse";
+import { UA, matchSecurity } from "./luse";
 
 /** Mansa Markets (mansamarkets.com) republishes LuSE session data daily and is reachable from cloud runners, unlike luse.co.zm which blocks them. */
 const BASE = "https://www.mansamarkets.com";
-const MON: Record<string, string> = { January: "01", February: "02", March: "03", April: "04", May: "05", June: "06", July: "07", August: "08", September: "09", October: "10", November: "11", December: "12" };
+const MON: Record<string, string> = {};
+for (const [i, m] of ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].entries()) { MON[m] = String(i + 1).padStart(2, "0"); MON[m.slice(0, 3)] = MON[m]; }
 
 const get = (path: string) => fetch(BASE + path, { headers: { "User-Agent": UA, Accept: "text/html" }, signal: AbortSignal.timeout(30000) }).then((r) => { if (!r.ok) throw new Error(`mansa ${path}: HTTP ${r.status}`); return r.text(); });
 const suf = (v: string | undefined, suffix: string | undefined) => (v == null ? null : parseFloat(v.replace(/,/g, "")) * ({ K: 1e3, M: 1e6, B: 1e9 }[suffix ?? ""] ?? 1));
@@ -88,4 +89,47 @@ export async function ingestMansa() {
   }
   if (p.summary) await prisma.marketSummary.upsert({ where: { date }, update: { text: p.summary }, create: { date, text: p.summary } });
   return { date: p.date, rows, lasi: p.lasi.value != null };
+}
+
+const DMY = (s: string | undefined) => { const m = s?.match(/(\d{1,2}) (\w+) (\d{4})/); return m && MON[m[2]] ? new Date(`${m[3]}-${MON[m[2]]}-${m[1].padStart(2, "0")}T00:00:00Z`) : null; };
+
+export type MansaDividend = { name: string; slug: string; dps: number; type: string; fy: string; exDate: Date | null; payDate: Date | null; yieldPct: number | null; status: string };
+
+/** Rows of the Zambia dividend calendar table on Mansa Markets. */
+export function parseMansaDividends(html: string): MansaDividend[] {
+  const rows: MansaDividend[] = [];
+  const tr = /<tr class="border-b[^"]*"><td class="px-3 py-3"><span[^>]*><a[^>]*href="\/zambia\/([a-z]+)"[^>]*>([^<]+)<\/a>[\s\S]*?<\/tr>/g;
+  let m: RegExpExecArray | null;
+  while ((m = tr.exec(html))) {
+    const cells = [...m[0].matchAll(/<td class="px-3 py-3[^"]*"[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1].replace(/<[^>]+>/g, " ").replace(/<!-- -->/g, "").replace(/\s+/g, " ").trim());
+    if (cells.length < 10) continue;
+    const dps = cells[1].match(/ZMW\s*([\d,.]+)/);
+    const y = cells[8].match(/([\d.]+)%/);
+    rows.push({
+      name: m[2].trim(), slug: m[1],
+      dps: dps ? parseFloat(dps[1]) : NaN, type: cells[3], fy: cells[4],
+      exDate: DMY(cells[5]), payDate: DMY(cells[7]),
+      yieldPct: y ? parseFloat(y[1]) : null, status: cells[9],
+    });
+  }
+  return rows;
+}
+
+/** File Mansa's dividend calendar into the corporate-actions tracker. */
+export async function ingestMansaDividends() {
+  const html = await get("/dividends/zambia");
+  const rows = parseMansaDividends(html);
+  const secs = await prisma.security.findMany({ select: { id: true, symbol: true, name: true } });
+  let saved = 0; const unmatched: string[] = [];
+  for (const r of rows) {
+    if (!isFinite(r.dps)) continue;
+    const sec = matchSecurity(`${r.name} ${r.slug}`, secs);
+    if (!sec) { unmatched.push(r.name); continue; }
+    const data = { exDate: r.exDate ?? undefined, payDate: r.payDate ?? undefined, amount: r.dps, notes: `${r.type} ${r.fy}${r.yieldPct != null ? ` · yield ≈${r.yieldPct}%` : ""} · ${r.status}`, source: "mansa" };
+    const existing = await prisma.corporateAction.findFirst({ where: { securityId: sec.id, type: "DIVIDEND", exDate: r.exDate ?? undefined, amount: r.dps } });
+    if (existing) await prisma.corporateAction.update({ where: { id: existing.id }, data });
+    else await prisma.corporateAction.create({ data: { ...data, securityId: sec.id, type: "DIVIDEND" } });
+    saved++;
+  }
+  return { dividends: rows.length, saved, unmatched };
 }
