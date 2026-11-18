@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   icons: { apple: "/icons/icon-192.png" },
 };
 
-export const viewport = { themeColor: "#070b14" };
+export const viewport = { themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#070b14" }, { media: "(prefers-color-scheme: light)", color: "#f4f6fa" }] };
 
 const SW_REGISTER = `if("serviceWorker"in navigator&&window.top===window)addEventListener("load",function(){navigator.serviceWorker.register("/sw.js")})`;
 

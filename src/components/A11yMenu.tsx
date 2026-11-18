@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { LOCALES } from "@/lib/i18n";
 import { setLang } from "./LanguageSwitcher";
 
-type Prefs = { text?: "lg" | "xl"; contrast?: boolean; motion?: boolean };
+type Prefs = { text?: "lg" | "xl"; contrast?: boolean; motion?: boolean; theme?: "light" | "dark" };
 const KEY = "busongo-a11y";
 const read = (): Prefs => { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { return {}; } };
 function apply(p: Prefs) {
@@ -12,9 +12,10 @@ function apply(p: Prefs) {
   if (p.text) d.dataset.text = p.text; else delete d.dataset.text;
   if (p.contrast) d.dataset.contrast = "high"; else delete d.dataset.contrast;
   if (p.motion) d.dataset.motion = "reduce"; else delete d.dataset.motion;
+  if (p.theme) d.dataset.theme = p.theme; else delete d.dataset.theme;
 }
 /** Runs before paint (inlined in the root layout) so saved settings don't flash. */
-export const A11Y_BOOT = `try{var p=JSON.parse(localStorage.getItem("${KEY}")||"{}"),d=document.documentElement;if(p.text)d.dataset.text=p.text;if(p.contrast)d.dataset.contrast="high";if(p.motion)d.dataset.motion="reduce"}catch(e){}`;
+export const A11Y_BOOT = `try{var p=JSON.parse(localStorage.getItem("${KEY}")||"{}"),d=document.documentElement;if(p.text)d.dataset.text=p.text;if(p.contrast)d.dataset.contrast="high";if(p.motion)d.dataset.motion="reduce";if(p.theme)d.dataset.theme=p.theme}catch(e){}`;
 
 export default function A11yMenu({ lang }: { lang: string }) {
   const [open, setOpen] = useState(false);
@@ -43,6 +44,14 @@ export default function A11yMenu({ lang }: { lang: string }) {
             <div className="flex gap-2">
               {sizes.map(([v, l]) => (
                 <button key={v} type="button" aria-pressed={(p.text ?? "") === v} onClick={() => update({ ...p, text: (v || undefined) as Prefs["text"] })} className={`btn flex-1 ${(p.text ?? "") === v ? "btn-primary" : "btn-ghost"}`}>{l}</button>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend className="label text-sm">Theme</legend>
+            <div className="flex gap-2">
+              {[["dark", "Dark"], ["light", "Light"]].map(([v, l]) => (
+                <button key={v} type="button" aria-pressed={(p.theme ?? "dark") === v} onClick={() => update({ ...p, theme: v as Prefs["theme"] })} className={`btn flex-1 ${(p.theme ?? "dark") === v ? "btn-primary" : "btn-ghost"}`}>{l}</button>
               ))}
             </div>
           </fieldset>
